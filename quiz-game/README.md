@@ -1,42 +1,159 @@
-# sv
+# Quiz Game
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A SvelteKit + TypeScript quiz game project.
 
-## Creating a project
+## Prerequisites
 
-If you're seeing this, you've probably already done this step. Congrats!
+- Node.js 20+ (LTS recommended)
+- npm 10+
+- Git
 
-```sh
-# create a new project
-npx sv create my-app
+Check versions:
+
+```bash
+node -v
+npm -v
+git --version
 ```
 
-To recreate this project with the same configuration:
+## Repository Setup
 
-```sh
-# recreate this project
-npx sv create --template minimal --types ts --add vitest="usages:unit,component" eslint tailwindcss="plugins:typography,forms" prettier --install npm quiz-game
+1. Clone the repository:
+
+```bash
+git clone <your-repo-url>
+cd quiz-game
 ```
 
-## Developing
+2. Install dependencies:
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+```bash
+npm install
+```
 
-```sh
+3. Configure environment variables:
+
+```bash
+cp .env.example .env
+```
+
+Then set values in `.env`:
+
+- `TURSO_DATABASE_URL`
+- `TURSO_AUTH_TOKEN`
+
+## Run the Project
+
+Start the development server:
+
+```bash
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+Build for production:
 
-To create a production version of your app:
-
-```sh
+```bash
 npm run build
 ```
 
-You can preview the production build with `npm run preview`.
+Preview production build:
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+```bash
+npm run preview
+```
+
+## Quality Checks
+
+Run type checks:
+
+```bash
+npm run check
+```
+
+Run tests:
+
+```bash
+npm test
+```
+
+Run lint checks:
+
+```bash
+npm run lint
+```
+
+Auto-format code:
+
+```bash
+npm run format
+```
+
+## Git Workflow
+
+### Typical Flow
+
+1. Sync your local `main`:
+
+```bash
+git checkout main
+git pull origin main
+```
+
+2. Create a feature branch:
+
+```bash
+git checkout -b <your-branch-name>
+```
+
+3. Make changes and verify quality:
+
+```bash
+npm run check
+npm test
+npm run lint
+```
+
+4. Commit your changes:
+
+```bash
+git add .
+git commit -m "<your-commit-message>"
+```
+
+5. Push and open a pull request:
+
+```bash
+git push -u origin <your-branch-name>
+```
+
+### Branch Name Rules (Placeholder)
+
+Replace this section with your team policy.
+
+Example template:
+
+- Pattern: `<type>/<issue-number>/<short-description>`
+- Allowed `type`:`<feat|fix|chore|docs|test|refactor>`
+- Examples:
+  - `<feat/#3/type-file>`
+  - `<fix/#4/button-bug-fix>`
+
+### Commit Message Rules (Placeholder)
+
+Replace this section with your team policy.
+
+Example template:
+
+- Format: `<type>[issue-number]: <short summary>`
+- Allowed `type`:`<feat|fix|docs|style|refactor|test|chore>`
+- Keep summary in imperative mood and under 72 characters
+- Examples:
+  - `<feat[#2]: Create a type.ts file for shared data models>`
+
+## Pull Request Checklist
+
+- Code builds successfully (`npm run build`)
+- Checks pass (`npm run check`, `npm test`, `npm run lint`)
+- Branch is up to date with `main`
+- PR description explains what changed and why
+- Screenshots included for UI changes (if applicable)
