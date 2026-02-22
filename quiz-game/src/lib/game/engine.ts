@@ -1,42 +1,75 @@
-import { type GameState } from "$lib/types";
+import type { GameState, Question } from "$lib/types";
 
-class GameEngine { 
-    private state: GameState; 
+class GameEngine {
+	private state: GameState;
+	private questions: Question[] = [];
+    private usedQuestionIndices: Set<string> = new Set();
 
-    constructor() { 
-        this.state = this.createInitialState(); 
-    } 
+	constructor(questions: Question[]) {
+        this.questions = questions;
+		this.state = this.createInitialState();
+	}
 
-    private createInitialState(): GameState { 
-        return { 
-            status: "idle", 
-            score: 0, 
-            questionCount: 0, 
-            currentQuestion: null, 
-            remainingMs: 0, 
-            playerName: "" 
-        }; 
-    }; 
+    // create initial game state
+	private createInitialState(): GameState {
+		return {
+			status: 'idle',
+			playerName: '',
+			score: 0,
+			questionCount: 0,
+			currentQuestion: null,
+			remainingMs: 0
+		};
+	}
 
-    start(durationSeconds: number): void { 
-        if (durationSeconds <= 0) { 
-            throw new Error("Duration must be positive"); 
-        } 
-        
-        this.state = { 
-            status: "playing", 
-            score: 0, 
-            questionCount: 0, 
-            currentQuestion: null, 
-            remainingMs: durationSeconds * 1000, 
-            playerName: "" 
-        }; 
-    } 
+    // start the game
+	start(playerName: string, durationSeconds: number): void {
+		if (durationSeconds <= 0) {
+			throw new Error('Duration must be positive');
+		}
 
-    getState(): GameState { 
-        return {...this.state}; 
-    } 
+        // reset game state
+        this.usedQuestionIndices.clear();
+		this.state = this.createInitialState();
+		this.state.status = 'playing';
+		this.state.playerName = playerName;
+		this.state.remainingMs = durationSeconds * 1000;
+	}
 
+    // get current game state
+	getState(): GameState {
+		return { ...this.state };
+	}
 
-} 
-export const engine = new GameEngine();
+    // select next question
+    nextQuestion(): void {
+        if (this.state.status !== "playing") return;
+
+        // filter unused questions
+        const unusedQuestions = this.questions.filter(
+            q => !this.usedQuestionIndices.has(q.id)
+        );
+
+        // if all questions are used, end the game
+        if (unusedQuestions.length === 0){
+            this.state.status = "finished";
+            this.state.currentQuestion = null;
+            return;
+        }
+
+        // select random unused question
+        const randomIndex = Math.floor(Math.random() * unusedQuestions.length);
+        const next = unusedQuestions[randomIndex];
+
+        // mark as used and update state
+        this.usedQuestionIndices.add(next.id);
+        this.state.currentQuestion = next;
+        this.state.questionCount += 1;
+    }
+
+    
+}
+
+export function createGameEngine(questions: Question[]) {
+    return new GameEngine(questions);
+}
