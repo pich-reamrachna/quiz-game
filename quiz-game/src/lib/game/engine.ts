@@ -4,6 +4,7 @@ class GameEngine {
 	private state: GameState;
 	private questions: Question[] = [];
     private usedQuestionIndices: Set<string> = new Set();
+	private timer: ReturnType<typeof setInterval> | null = null;
 
 	constructor(questions: Question[]) {
         this.questions = questions;
@@ -34,6 +35,38 @@ class GameEngine {
 		this.state.status = 'playing';
 		this.state.playerName = playerName;
 		this.state.remainingMs = durationSeconds * 1000;
+	}
+
+    // start the timer
+	startTimer(
+		durationSeconds: number,
+		onTick: (timeLeftSeconds: number) => void,
+		onElapsed: () => void
+	): void {
+		if (durationSeconds <= 0) {
+			throw new Error('Duration must be positive');
+		}
+
+		this.stopTimer();
+		this.state.remainingMs = durationSeconds * 1000;
+		onTick(durationSeconds);
+
+		this.timer = setInterval(() => {
+			this.state.remainingMs = Math.max(0, this.state.remainingMs - 1000);
+			onTick(Math.ceil(this.state.remainingMs / 1000));
+
+			if (this.state.remainingMs <= 0) {
+				this.stopTimer();
+				onElapsed();
+			}
+		}, 1000);
+	}
+
+    // stop the timer
+	stopTimer(): void {
+		if (!this.timer) return;
+		clearInterval(this.timer);
+		this.timer = null;
 	}
 
     // get current game state
