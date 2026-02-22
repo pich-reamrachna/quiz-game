@@ -112,7 +112,6 @@
 		<div class="top-bar">
 			<span class="q-num">
 				Q&nbsp;{questionIndex + 1}
-				<span class="q-total">/ {QUESTIONS.length}</span>
 			</span>
 
 			<span class="score-badge">✓ {score}</span>
