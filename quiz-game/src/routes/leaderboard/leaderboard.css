@@ -1,0 +1,234 @@
+<style>
+	:global(body) {
+		margin: 0;
+		padding: 0;
+		font-family: 'Noto Sans JP', sans-serif;
+		background: #07050f;
+	}
+
+	.page {
+		min-height: 100vh;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: radial-gradient(ellipse at 50% 50%, #120820 0%, #07050f 70%);
+		position: relative;
+		overflow: hidden;
+	}
+
+	.bg-grid {
+		position: absolute;
+		inset: 0;
+		background-image:
+			linear-gradient(rgba(180, 100, 255, 0.05) 1px, transparent 1px),
+			linear-gradient(90deg, rgba(180, 100, 255, 0.05) 1px, transparent 1px);
+		background-size: 48px 48px;
+		pointer-events: none;
+	}
+
+	.orb {
+		position: absolute;
+		border-radius: 50%;
+		filter: blur(80px);
+		pointer-events: none;
+		animation: float 8s ease-in-out infinite;
+	}
+
+	.orb-1 {
+		width: 350px; height: 350px;
+		background: rgba(139, 47, 248, 0.2);
+		top: -80px; right: -80px;
+	}
+
+	.orb-2 {
+		width: 250px; height: 250px;
+		background: rgba(201, 127, 255, 0.12);
+		bottom: -60px; left: -60px;
+		animation-delay: -4s;
+	}
+
+	@keyframes float {
+		0%, 100% { transform: translateY(0); }
+		50%       { transform: translateY(-25px); }
+	}
+
+	/* ── Card ──────────────────────────── */
+	.card {
+		position: relative;
+		z-index: 1;
+		background: rgba(15, 8, 30, 0.75);
+		border: 1px solid rgba(180, 100, 255, 0.2);
+		border-radius: 28px;
+		padding: 2rem 2.5rem;
+		max-width: 520px;
+		width: 92%;
+		backdrop-filter: blur(24px);
+		box-shadow:
+			0 0 80px rgba(140, 60, 255, 0.12),
+			0 2px 0 rgba(255, 255, 255, 0.05) inset;
+		animation: cardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+	}
+
+	@keyframes cardIn {
+		from { opacity: 0; transform: translateY(24px) scale(0.97); }
+		to   { opacity: 1; transform: translateY(0) scale(1); }
+	}
+
+	/* ── Header ─────────────────────────── */
+	.header {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.back-btn {
+		background: transparent;
+		border: 1px solid rgba(180, 100, 255, 0.3);
+		border-radius: 8px;
+		color: #a060e0;
+		padding: 0.35rem 0.8rem;
+		font-size: 0.8rem;
+		font-family: inherit;
+		cursor: pointer;
+		transition: background 0.15s, color 0.15s;
+	}
+
+	.back-btn:hover {
+		background: rgba(160, 96, 224, 0.15);
+		color: #c97fff;
+	}
+
+	.title {
+		font-family: 'Zen Dots', cursive;
+		font-size: 1.5rem;
+		color: #c97fff;
+		margin: 0;
+	}
+
+	/* ── Scrollable table ────────────────── */
+	.table-wrap {
+		max-height: 360px;
+		overflow-y: auto;
+		border-radius: 14px;
+		border: 1px solid rgba(180, 100, 255, 0.15);
+		margin-bottom: 1.5rem;
+		scrollbar-width: thin;
+		scrollbar-color: rgba(160, 96, 224, 0.4) transparent;
+	}
+
+	.table {
+		width: 100%;
+		border-collapse: collapse;
+	}
+
+	thead { position: sticky; top: 0; z-index: 1; }
+
+	th {
+		background: rgba(160, 96, 224, 0.15);
+		color: #a060e0;
+		font-size: 0.72rem;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		padding: 0.65rem 0.9rem;
+		text-align: left;
+		font-weight: 700;
+		border-bottom: 1px solid rgba(180, 100, 255, 0.15);
+	}
+
+	td {
+		padding: 0.65rem 0.9rem;
+		color: #d0c0f0;
+		font-size: 0.95rem;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+	}
+
+	tr:last-child td { border-bottom: none; }
+	tr.top3 td       { background: rgba(180, 100, 255, 0.06); }
+	tr:hover td      { background: rgba(160, 96, 224, 0.08); }
+
+	.col-rank  { width: 56px;  text-align: center; }
+	.col-score { width: 72px;  text-align: right; }
+	.col-date  { width: 100px; text-align: right; }
+
+	.rank-cell {
+		font-family: 'Zen Dots', cursive;
+		font-size: 1.1rem;
+		text-align: center;
+	}
+
+	.score-cell {
+		font-family: 'Zen Dots', cursive;
+		font-size: 1.05rem;
+		color: #c97fff;
+		text-align: right;
+	}
+
+	.date-cell {
+		font-size: 0.78rem;
+		color: #6a5a8a;
+		text-align: right;
+	}
+
+	/* ── Placeholder states ─────────────── */
+	.placeholder {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding: 3rem 1rem;
+		color: #6a5a8a;
+		gap: 0.5rem;
+	}
+
+	.ph-icon  { font-size: 2.5rem; margin: 0; }
+	.placeholder p { margin: 0; font-size: 0.95rem; }
+	.error-state   { color: #ff6b8a; }
+
+	.retry-btn {
+		margin-top: 0.5rem;
+		background: transparent;
+		border: 1px solid rgba(255, 107, 138, 0.4);
+		border-radius: 8px;
+		color: #ff6b8a;
+		padding: 0.4rem 1rem;
+		font-family: inherit;
+		cursor: pointer;
+	}
+
+	.retry-btn:hover { background: rgba(255, 107, 138, 0.1); }
+
+	/* ── Spinner ────────────────────────── */
+	.spinner {
+		width: 32px; height: 32px;
+		border: 3px solid rgba(180, 100, 255, 0.2);
+		border-top-color: #a060e0;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+	}
+
+	@keyframes spin { to { transform: rotate(360deg); } }
+
+	/* ── Play again button ──────────────── */
+	.btn-play {
+		width: 100%;
+		padding: 0.9rem;
+		background: linear-gradient(135deg, #7b1fe8, #c97fff);
+		border: none;
+		border-radius: 14px;
+		color: #fff;
+		font-family: 'Zen Dots', cursive;
+		font-size: 1rem;
+		letter-spacing: 0.08em;
+		cursor: pointer;
+		box-shadow: 0 4px 24px rgba(139, 47, 248, 0.45);
+		transition: filter 0.15s, transform 0.15s;
+	}
+
+	.btn-play:hover {
+		filter: brightness(1.1);
+		transform: translateY(-2px);
+	}
+
+	.btn-play:active { transform: scale(0.97); }
+</style>
