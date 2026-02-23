@@ -3,72 +3,64 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
-	import { engine } from '$lib/game/engine';
+	import { createGameEngine } from '$lib/game/engine';
 	import { QUESTIONS } from '$lib/questions';
 	import type { Question } from '$lib/types';
 
-	const TOTAL_TIME = 20;
+	const TOTAL_TIME = 3600;
+	const engine = createGameEngine(QUESTIONS);
 
 	// ── Get player name from URL param ──────────────────────────────────────────
 	let name = $derived($page.url.searchParams.get('name') ?? '');
 
 	// ── Local UI state ──────────────────────────────────────────────────────────
 	let currentQuestion = $state<Question | null>(null);
-	let questionIndex   = $state(0);
-	let score           = $state(0);
-	let timeLeft        = $state(TOTAL_TIME);
-	let selectedKey     = $state<string | null>(null);
-	let phase           = $state<'playing' | 'feedback'>('playing');
+	let questionIndex = $state(0);
+	let score = $state(0);
+	let timeLeft = $state(TOTAL_TIME);
+	let selectedKey = $state<string | null>(null);
+	let phase = $state<'playing' | 'feedback'>('playing');
 
-	// ── Derived ─────────────────────────────────────────────────────────────────
-	const progress   = $derived((timeLeft / TOTAL_TIME) * 100);
-	const timerColor = $derived(
-		timeLeft > 10 ? '#a060e0' : timeLeft > 5 ? '#f59e0b' : '#ef4444'
-	);
-
-	// ── Timer ───────────────────────────────────────────────────────────────────
-	let timer: ReturnType<typeof setInterval>;
+	const progress = $derived((timeLeft / TOTAL_TIME) * 100);
+	const timerColor = $derived(timeLeft > 10 ? '#a060e0' : timeLeft > 5 ? '#f59e0b' : '#ef4444');
 
 	function startTimer() {
-		timeLeft = TOTAL_TIME;
-		timer = setInterval(() => {
-			timeLeft -= 1;
-			if (timeLeft <= 0) {
-				clearInterval(timer);
-				endGame();
+		engine.startTimer(
+			TOTAL_TIME,
+			(secondsLeft) => {
+				timeLeft = secondsLeft;
+			},
+			() => {
+				void endGame();
 			}
-		}, 1000);
+		);
 	}
 
-	// ── Answer handler ──────────────────────────────────────────────────────────
 	function choose(key: string) {
 		if (phase !== 'playing' || !currentQuestion) return;
-		clearInterval(timer);
 
-		const chosen  = currentQuestion.choices.find((c) => c.key === key);
+		const chosen = currentQuestion.choices.find((c) => c.key === key);
 		const correct = chosen?.isCorrect ?? false;
 
 		selectedKey = key;
-		phase       = 'feedback';
+		phase = 'feedback';
 		if (correct) score += 1;
 
 		setTimeout(() => {
 			const nextIndex = questionIndex + 1;
 			if (nextIndex >= QUESTIONS.length) {
-				endGame();
+				void endGame();
 			} else {
-				questionIndex   = nextIndex;
+				questionIndex = nextIndex;
 				currentQuestion = QUESTIONS[nextIndex];
-				selectedKey     = null;
-				phase           = 'playing';
-				startTimer();
+				selectedKey = null;
+				phase = 'playing';
 			}
 		}, 900);
 	}
 
-	// ── End game ────────────────────────────────────────────────────────────────
 	async function endGame() {
-		clearInterval(timer);
+		engine.stopTimer();
 		try {
 			await fetch('/api/scores', {
 				method: 'POST',
@@ -82,15 +74,18 @@
 	}
 
 	onMount(() => {
-		if (!name) { goto('/'); return; }
-		engine.start(TOTAL_TIME);
+		if (!name) {
+			goto('/');
+			return;
+		}
+		engine.start(name, TOTAL_TIME);
 		currentQuestion = QUESTIONS[0];
-		questionIndex   = 0;
-		score           = 0;
+		questionIndex = 0;
+		score = 0;
 		startTimer();
 	});
 
-	onDestroy(() => clearInterval(timer));
+	onDestroy(() => engine.stopTimer());
 </script>
 
 <svelte:head>
