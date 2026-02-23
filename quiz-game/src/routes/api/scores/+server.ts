@@ -1,3 +1,5 @@
+import { db } from "$lib/server/db";
+
 export async function POST() {
   // save score
 }
