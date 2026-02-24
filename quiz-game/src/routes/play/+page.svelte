@@ -98,8 +98,6 @@
 </svelte:head>
 
 <div class="page">
-	<div class="orb orb-1"></div>
-	<div class="orb orb-2"></div>
 	<div class="bg-grid"></div>
 
 	<main class="card">
