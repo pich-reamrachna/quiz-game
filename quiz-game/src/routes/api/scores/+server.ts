@@ -20,8 +20,8 @@ export async function POST ({request}) {
     }
 
     // check if score is an integer, and positive number
-    if (!Number.isInteger(score) || score <=  0) {
-      return json({error: 'Score must be a positive integer'}, {status: 400})
+    if (!Number.isInteger(score) || score <  0) {
+      return json({error: 'Score must be a zero or a positive integer'}, {status: 400})
     }
 
     // insert into DB
