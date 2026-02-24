@@ -10,10 +10,8 @@
 	const TOTAL_TIME = 3600;
 	const engine = createGameEngine(QUESTIONS);
 
-	// ── Get player name from URL param ──────────────────────────────────────────
 	let name = $derived($page.url.searchParams.get('name') ?? '');
 
-	// ── Local UI state ──────────────────────────────────────────────────────────
 	let currentQuestion = $state<Question | null>(null);
 	let questionIndex = $state(0);
 	let score = $state(0);
@@ -89,7 +87,7 @@
 </script>
 
 <svelte:head>
-	<title>Play – 早押し日本語クイズ</title>
+	<title>日本語クイズ</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link
 		href="https://fonts.googleapis.com/css2?family=Zen+Dots&family=Noto+Sans+JP:wght@400;700&display=swap"
@@ -101,7 +99,6 @@
 	<div class="bg-grid"></div>
 
 	<main class="card">
-		<!-- Top bar: Q number | score | timer -->
 		<div class="top-bar">
 			<span class="q-num">
 				Q&nbsp;{questionIndex + 1}
@@ -115,7 +112,6 @@
 			</div>
 		</div>
 
-		<!-- Timer progress bar -->
 		<div class="timer-bar-track">
 			<div
 				class="timer-bar-fill"
@@ -123,14 +119,12 @@
 			></div>
 		</div>
 
-		<!-- English prompt -->
 		{#if currentQuestion}
 			<div class="prompt-box">
 				<p class="prompt-label">Translate to Japanese</p>
 				<p class="prompt-text">{currentQuestion.promptEn}</p>
 			</div>
 
-			<!-- Answer buttons A / B / C -->
 			<div class="choices">
 				{#each currentQuestion.choices as choice}
 					<button
@@ -153,7 +147,6 @@
 			</div>
 		{/if}
 
-		<!-- Player name -->
 		<p class="player-tag">👤 {name}</p>
 	</main>
 </div>
