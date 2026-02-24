@@ -94,11 +94,29 @@ class GameEngine {
         const randomIndex = Math.floor(Math.random() * unusedQuestions.length);
         const next = unusedQuestions[randomIndex];
 
+        // shuffle options
+        const shuffledOptions = this.shuffleQuestions(next.choices);
+
         // mark as used and update state
         this.usedQuestionIndices.add(next.id);
-        this.state.currentQuestion = next;
+        this.state.currentQuestion = {
+            ...next,
+            choices: shuffledOptions
+        };
         this.state.questionCount += 1;
     }
+
+    //question shuffler function (Fisher-Yates algorithm)
+    private shuffleQuestions<T>(array: T[]): T[] {
+        const copy = [...array];
+        for (let i = copy.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+    }
+    
+
 
     
 }
