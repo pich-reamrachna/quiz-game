@@ -115,9 +115,20 @@ class GameEngine {
         }
         return copy;
     }
-    
 
+    //answer handling
+    answer(choiceKey: string): void {
+        if (this.state.status !== "playing" || !this.state.currentQuestion) return;
 
+        const selected = this.state.currentQuestion.choices.find(c => c.key === choiceKey);
+        if (!selected) return;
+
+        if (selected.isCorrect) {
+            this.state.score += 1; // score up
+        }
+
+        this.nextQuestion();
+    }
     
 }
 
