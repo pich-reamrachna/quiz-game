@@ -5,7 +5,6 @@
 	let name = $state('');
 	let error = $state('');
 	
-
 	function handleStart() {
 		if (!name.trim()) {
 			error = 'Please enter your name!';
@@ -21,8 +20,6 @@
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Enter') handleStart();
 	}
-
-	
 </script>
 
 <svelte:head>
@@ -36,24 +33,13 @@
 </svelte:head>
 
 <div class="page">
-	
 	<div class="bg-grid"></div>
 
 	<main class="content">
-	
 		<h1 class="title">日本語クイズ</h1>
-		<p class="tagline">英語を見て、日本語で答えよう！</p>
-			<div class="logo-text">
-				<p class="logo-sub">早押し</p>
-				<h1 class="logo-main">QUIZ</h1>
-			</div>
-
-		<div class="divider"></div>
-
-		<!-- Name input -->
+	
 		<div class="input-group">
 			<label for="name-input">
-				<span class="label-icon">👤</span> Your Name
 			</label>
 			<div class="input-wrap">
 				<input
@@ -72,17 +58,14 @@
 			{/if}
 		</div>
 
-		<!-- Buttons -->
 		<div class="btn-group">
-    <button class="pixel-btn" onclick={handleLeaderboard}>
-        <img src="/Scoreboard.png" alt="Scoreboard" />
-        
-    </button>
-    <button class="pixel-btn" onclick={handleStart}>
-        <img src="/play-button.png" alt="Play" />
-        
-    </button>
-</div>
+			<button class="pixel-btn" onclick={handleLeaderboard}>
+				<img src="/Scoreboard.png" alt="Scoreboard" />
+			</button>
+			<button class="pixel-btn" onclick={handleStart}>
+				<img src="/play-button.png" alt="Play" />
+			</button>
+		</div>
 	</main>
 </div>
 
