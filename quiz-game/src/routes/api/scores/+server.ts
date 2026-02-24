@@ -5,7 +5,13 @@ import type { GameState } from "$lib/types";
 export async function POST ({request}) {
   try {
     // send GameState data to server
-    const body: GameState = await request.json();
+    let body: GameState 
+    try {
+      body = await request.json();
+      } catch {
+        return json({ error: "Invalid JSON body" }, { status: 400 });
+      }
+
     const { playerName, score} = body
 
     // check if playername exist, if its a string, and is between 1-12 character
@@ -14,7 +20,7 @@ export async function POST ({request}) {
     }
 
     // check if score is an integer, and positive number
-    if (!Number.isInteger(score) || score < 0) {
+    if (!Number.isInteger(score) || score <=  0) {
       return json({error: 'Score must be a positive integer'}, {status: 400})
     }
 
