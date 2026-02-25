@@ -34,6 +34,9 @@
 		);
 	}
 
+	let pendingAdvance: ReturnType<typeof setTimeout> | null = null; // stores the ID of the 900ms feedback timeout
+	let hasEnded = false;
+
 	function choose(key: string) {
 		if (phase !== 'playing' || !currentQuestion) return;
 
@@ -44,13 +47,19 @@
 		phase = 'feedback';
 		if (correct) score += 1;
 
-		setTimeout(() => {
-			const nextIndex = questionIndex + 1;
-			if (nextIndex >= QUESTIONS.length) {
+		// After the 900ms feedback delay, continue only if the game has not ended
+		pendingAdvance = setTimeout(() => {
+			if (hasEnded) return;
+
+			engine.nextQuestion();
+			const state = engine.getState();
+
+			// When we answer the last question (no more question)
+			if (state.status === 'finished' || !state.currentQuestion) {
 				void endGame();
 			} else {
-				questionIndex = nextIndex;
-				currentQuestion = QUESTIONS[nextIndex];
+				currentQuestion = state.currentQuestion;
+				questionIndex = Math.max(0, state.questionCount - 1);
 				selectedKey = null;
 				phase = 'playing';
 			}
@@ -58,7 +67,16 @@
 	}
 
 	async function endGame() {
+		if (hasEnded) return; // prevent multiple calls to endGame()
+		hasEnded = true;
+
+		if (pendingAdvance) {
+			clearTimeout(pendingAdvance);
+			pendingAdvance = null;
+		}
+
 		engine.stopTimer();
+
 		try {
 			await fetch('/api/scores', {
 				method: 'POST',
@@ -77,13 +95,26 @@
 			return;
 		}
 		engine.start(name, TOTAL_TIME);
-		currentQuestion = QUESTIONS[0];
-		questionIndex = 0;
+		engine.nextQuestion();
+		const state = engine.getState();
+		
+		if (state.status === 'finished' || !state.currentQuestion) {
+			void endGame();
+			return;
+		}
+		
+		currentQuestion = state.currentQuestion;
+		questionIndex = Math.max(0, state.questionCount - 1); // defensive: prevent negative index
 		score = 0;
 		startTimer();
 	});
 
-	onDestroy(() => engine.stopTimer());
+	onDestroy(() => {
+		if (pendingAdvance) {
+			clearTimeout(pendingAdvance);
+		}
+		engine.stopTimer();
+	});
 </script>
 
 <svelte:head>
