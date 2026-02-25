@@ -52,10 +52,10 @@ class GameEngine {
 		onTick(durationSeconds);
 
 		this.timer = setInterval(() => {
-			this.state.remainingMs = Math.max(0, this.state.remainingMs - 1000);
+			this.tick(1000);
 			onTick(Math.ceil(this.state.remainingMs / 1000));
 
-			if (this.state.remainingMs <= 0) {
+			if (this.state.status === 'finished') {
 				this.stopTimer();
 				onElapsed();
 			}
@@ -85,8 +85,7 @@ class GameEngine {
 
         // if all questions are used, end the game
         if (unusedQuestions.length === 0){
-            this.state.status = "finished";
-            this.state.currentQuestion = null;
+            this.finishGame();
             return;
         }
 
@@ -133,14 +132,21 @@ class GameEngine {
     //timer countdown (tick)
     tick(deltaMs: number): void {
         if (this.state.status !== "playing") return;
+        if (deltaMs < 0 ){
+            throw new Error("Delta time must be positive");
+        }
         
         this.state.remainingMs -= deltaMs; //reduce remaining time
         
         if (this.state.remainingMs <= 0) {
-            this.state.remainingMs = 0;
-            this.state.status = "finished";
-            this.state.currentQuestion = null;
+            this.finishGame();
         }
+    }
+
+    private finishGame(): void {
+        this.state.remainingMs = 0;
+        this.state.status = "finished";
+        this.state.currentQuestion = null;
     }
     
 }
