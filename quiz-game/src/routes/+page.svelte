@@ -17,6 +17,10 @@
 		goto('/leaderboard');
 	}
 
+	function handleCredit() {
+		goto('/credit');
+	}
+
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Enter') handleStart();
 	}
@@ -64,6 +68,10 @@
 			</button>
 			<button class="pixel-btn" onclick={handleStart}>
 				<img src="/play-button.png" alt="Play" />
+			</button>
+			<!-- Temporary Button -->
+			<button class="pixel-btn" onclick={handleCredit}>
+				<img src="/backdoor.png" alt="Credit" />
 			</button>
 		</div>
 	</main>
