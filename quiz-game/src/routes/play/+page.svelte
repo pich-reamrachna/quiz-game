@@ -7,7 +7,7 @@
 	import { QUESTIONS } from '$lib/questions';
 	import type { Question } from '$lib/types';
 
-	const TOTAL_TIME = 3600;
+	const TOTAL_TIME = 5;
 	const engine = createGameEngine(QUESTIONS);
 
 	// ── Get player name from URL param ──────────────────────────────────────────
@@ -65,7 +65,7 @@
 			await fetch('/api/scores', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name, score })
+				body: JSON.stringify({ playerName: name, score })
 			});
 		} catch (e) {
 			console.error('Failed to save score:', e);

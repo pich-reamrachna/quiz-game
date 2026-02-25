@@ -10,7 +10,7 @@
 
 	onMount(async () => {
 		try {
-			const res = await fetch('/api/scores');
+			const res = await fetch('/api/scores?limit=100');
 			if (!res.ok) throw new Error();
 			const data: ScoreRow[] = await res.json();
 			entries = data;
@@ -91,7 +91,7 @@
 						{#each entries as entry, i}
 							<tr class:top3={i < 3}>
 								<td class="col-rank rank-cell">{medal(i + 1)}</td>
-								<td class="col-name">{entry.name}</td>
+								<td class="col-name name-cell">{entry.name}</td>
 								<td class="col-score score-cell">{entry.score}</td>
 								<td class="col-date date-cell">{formatDate(entry.created_at)}</td>
 							</tr>
