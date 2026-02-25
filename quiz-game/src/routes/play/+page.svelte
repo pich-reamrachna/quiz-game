@@ -45,12 +45,14 @@
 		if (correct) score += 1;
 
 		setTimeout(() => {
-			const nextIndex = questionIndex + 1;
-			if (nextIndex >= QUESTIONS.length) {
+			engine.nextQuestion();
+			const state = engine.getState();
+
+			if (state.status === 'finished' || !state.currentQuestion) {
 				void endGame();
 			} else {
-				questionIndex = nextIndex;
-				currentQuestion = QUESTIONS[nextIndex];
+				currentQuestion = state.currentQuestion;
+				questionIndex = Math.max(0, state.questionCount - 1);
 				selectedKey = null;
 				phase = 'playing';
 			}
@@ -77,8 +79,10 @@
 			return;
 		}
 		engine.start(name, TOTAL_TIME);
-		currentQuestion = QUESTIONS[0];
-		questionIndex = 0;
+		engine.nextQuestion();
+		const state = engine.getState();
+		currentQuestion = state.currentQuestion;
+		questionIndex = Math.max(0, state.questionCount - 1); // defensive: prevent negative index
 		score = 0;
 		startTimer();
 	});

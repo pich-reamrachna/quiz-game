@@ -14,7 +14,7 @@ export async function POST ({request}) {
 
     const { playerName, score} = body
 
-    // check if playername exist, if its a string, and is between 1-12 character
+    // check if playerName exist, if its a string, and is between 1-20 character
     if (!playerName || typeof playerName !== 'string' || playerName.trim().length < 1 || playerName.trim().length > 20) {
       return json ({error: "Name must be between 1 and 20 characters."}, {status: 400})
     }
