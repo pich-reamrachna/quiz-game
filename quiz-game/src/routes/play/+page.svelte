@@ -34,7 +34,7 @@
 		);
 	}
 
-	let pendingAdvance: ReturnType<typeof setTimeout> | null = null; // stores the ID of the 1900ms feedback timeout
+	let pendingAdvance: ReturnType<typeof setTimeout> | null = null; // stores the ID of the 900ms feedback timeout
 	let hasEnded = false;
 
 	function choose(key: string) {
