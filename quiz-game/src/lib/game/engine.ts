@@ -94,8 +94,9 @@ class GameEngine {
         const randomIndex = Math.floor(Math.random() * unusedQuestions.length);
         const next = unusedQuestions[randomIndex];
 
-        // shuffle options
-        const shuffledOptions = this.shuffleQuestions(next.choices);
+        // shuffle options (shuffleArray find at line 111)
+        const shuffledOptions = this.shuffleArray(next.choices).map(choice => ({
+            ...choice}));
 
         // mark as used and update state
         this.usedQuestionIndices.add(next.id);
@@ -107,7 +108,7 @@ class GameEngine {
     }
 
     //question shuffler function (Fisher-Yates algorithm)
-    private shuffleQuestions<T>(array: T[]): T[] {
+    private shuffleArray<T>(array: T[]): T[] {
         const copy = [...array];
         for (let i = copy.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -118,9 +119,16 @@ class GameEngine {
 
     //answer handling
     answer(choiceKey: string): void {
-        if (this.state.status !== "playing" || !this.state.currentQuestion) return;
+        // check if game is playing
+        const currentQuestion = this.state.currentQuestion;
+        if (!currentQuestion || this.state.status !== "playing") return;
 
-        const selected = this.state.currentQuestion.choices.find(c => c.key === choiceKey);
+        // find original source question
+        const sourceQuestion = this.questions.find(q => q.id === currentQuestion.id);
+        if (!sourceQuestion) return;
+
+        // find selected choice
+        const selected = sourceQuestion.choices.find(c => c.key === choiceKey);
         if (!selected) return;
 
         if (selected.isCorrect) {
