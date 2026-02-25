@@ -34,6 +34,9 @@
 		);
 	}
 
+	let pendingAdvance: ReturnType<typeof setTimeout> | null = null; // stores the ID of the 1900ms timeout
+	let hasEnded = false;
+
 	function choose(key: string) {
 		if (phase !== 'playing' || !currentQuestion) return;
 
@@ -44,10 +47,14 @@
 		phase = 'feedback';
 		if (correct) score += 1;
 
-		setTimeout(() => {
+		// Before 900ms timeout for feedback, if hasEnded is still false
+		pendingAdvance = setTimeout(() => {
+			if (hasEnded) return;
+
 			engine.nextQuestion();
 			const state = engine.getState();
 
+			// When we answer the last question (no more question)
 			if (state.status === 'finished' || !state.currentQuestion) {
 				void endGame();
 			} else {
@@ -60,7 +67,16 @@
 	}
 
 	async function endGame() {
+		if (hasEnded) return; // prevent multiple calls to endGame()
+		hasEnded = true;
+
+		if (pendingAdvance) {
+			clearTimeout(pendingAdvance);
+			pendingAdvance = null;
+		}
+
 		engine.stopTimer();
+
 		try {
 			await fetch('/api/scores', {
 				method: 'POST',
@@ -81,13 +97,24 @@
 		engine.start(name, TOTAL_TIME);
 		engine.nextQuestion();
 		const state = engine.getState();
+		
+		if (state.status === 'finished' || !state.currentQuestion) {
+			void endGame();
+			return;
+		}
+		
 		currentQuestion = state.currentQuestion;
 		questionIndex = Math.max(0, state.questionCount - 1); // defensive: prevent negative index
 		score = 0;
 		startTimer();
 	});
 
-	onDestroy(() => engine.stopTimer());
+	onDestroy(() => {
+		if (pendingAdvance) {
+			clearTimeout(pendingAdvance);
+		}
+		engine.stopTimer();
+	});
 </script>
 
 <svelte:head>
