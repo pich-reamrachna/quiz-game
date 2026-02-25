@@ -129,6 +129,19 @@ class GameEngine {
 
         this.nextQuestion();
     }
+
+    //timer countdown (tick)
+    tick(deltaMs: number): void {
+        if (this.state.status !== "playing") return;
+        
+        this.state.remainingMs -= deltaMs; //reduce remaining time
+        
+        if (this.state.remainingMs <= 0) {
+            this.state.remainingMs = 0;
+            this.state.status = "finished";
+            this.state.currentQuestion = null;
+        }
+    }
     
 }
 
