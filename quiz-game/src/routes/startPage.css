@@ -5,7 +5,7 @@
 		font-family: 'Noto Sans JP', sans-serif;
 		background: #07050f;}
 
-.page {
+.start-page {
 		min-height: 100vh;
 		display: flex;
 		align-items: center;
@@ -35,9 +35,9 @@
 	max-width: 420px;
 	text-align: center;}
 	
-.title {
-	font-family: 'Zen Dots', cursive;
-	font-size: 2.8rem;
+.startPage-title {
+	font-family: 'DotGothic16','Zen Dots', cursive;
+	font-size: 4rem;
 	color: #fff;
 	margin: 0 0 2rem;
 	text-shadow: 0 0 40px rgba(200, 127, 255, 0.4);}
