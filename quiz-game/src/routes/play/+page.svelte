@@ -34,7 +34,7 @@
 		);
 	}
 
-	let pendingAdvance: ReturnType<typeof setTimeout> | null = null; // stores the ID of the 1900ms timeout
+	let pendingAdvance: ReturnType<typeof setTimeout> | null = null; // stores the ID of the 1900ms feedback timeout
 	let hasEnded = false;
 
 	function choose(key: string) {
@@ -47,7 +47,7 @@
 		phase = 'feedback';
 		if (correct) score += 1;
 
-		// Before 900ms timeout for feedback, if hasEnded is still false
+		// After the 900ms feedback delay, continue only if the game has not ended
 		pendingAdvance = setTimeout(() => {
 			if (hasEnded) return;
 
