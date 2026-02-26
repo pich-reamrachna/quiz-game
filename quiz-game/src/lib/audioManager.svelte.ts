@@ -35,6 +35,7 @@ const BGM_LIST = [bgm1, bgm2, bgm3, bgm4, bgm5, bgm6, bgm7, bgm8, bgm9];
  * Uses Svelte 5 runes for reactive mute state.
  */
 class AudioManager {
+    private transitionToken = 0;
     private bgm: HTMLAudioElement | null = null;
     private currentBgmPath: string | null = null;
     private homeBgmIndex: number | null = null;
@@ -76,6 +77,7 @@ class AudioManager {
      */
     async playBgm(index?: number, loop: boolean = true) {
         if (!browser) return;
+        const token = ++this.transitionToken;
         const path = index !== undefined ? BGM_LIST[index] : BGM_LIST[Math.floor(Math.random() * BGM_LIST.length)];
         
         if (this.currentBgmPath === path && this.bgm) {
@@ -84,6 +86,8 @@ class AudioManager {
         }
 
         if (this.bgm) await this.fadeOut();
+
+        if (token !== this.transitionToken) return;
 
         this.bgm = new Audio(path);
         this.bgm.loop = loop;
@@ -98,8 +102,12 @@ class AudioManager {
      * Internal BGM player for specific paths (non-library assets)
      */
     private async playBgmCustom(path: string, loop: boolean = true) {
+        const token = ++this.transitionToken;
         if (!browser) return;
         if (this.bgm) await this.fadeOut();
+
+        if (token !== this.transitionToken) return;
+
         this.bgm = new Audio(path);
         this.bgm.loop = loop;
         this.bgm.volume = 0;
@@ -209,10 +217,14 @@ class AudioManager {
         const handler = () => {
             this.unlockAudio();
             if (this.hasUnlocked) {
-                ['click', 'keydown', 'touchstart'].forEach(e => window.removeEventListener(e, handler));
+                ['click', 'keydown', 'touchstart'].forEach((e) => {
+                    window.removeEventListener(e, handler);
+                });
             }
         };
-        ['click', 'keydown', 'touchstart'].forEach(e => window.addEventListener(e, handler));
+        ['click', 'keydown', 'touchstart'].forEach((e) => {
+            window.addEventListener(e, handler);
+        });
     }
 
     toggleMute() { this.isMuted = !this.isMuted; }

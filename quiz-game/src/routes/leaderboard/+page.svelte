@@ -4,11 +4,15 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import type { ScoreRow } from '$lib/types';
+	import { audioManager } from '$lib/audioManager.svelte';
 
 	let entries = $state<ScoreRow[]>([]);
 	let status  = $state<'loading' | 'error' | 'empty' | 'ok'>('loading');
 
 	onMount(async () => {
+		// Ensure home BGM is playing/continues
+		audioManager.playHomeBgm();
+
 		try {
 			const res = await fetch('/api/scores?limit=100');
 			if (!res.ok) throw new Error();
@@ -19,6 +23,11 @@
 			status = 'error';
 		}
 	});
+
+	function handleBack() {
+		audioManager.playSfx('click');
+		goto('/');
+	}
 
 	function formatDate(iso: string) {
 		return new Date(iso).toLocaleDateString('ja-JP', {
@@ -55,7 +64,7 @@
 	<main class="leaderboard-card">
 		<!-- Header -->
 		<div class="header">
-			<button class="leaderboard-back-btn" onclick={() => goto('/')}>← Back</button>
+			<button class="leaderboard-back-btn" onclick={handleBack}>← Back</button>
 			<h1 class="leaderboard-title">Leaderboard</h1>
 		</div>
 
@@ -104,6 +113,6 @@
 			{/if}
 		</div>
 
-		<button class="btn-play" onclick={() => goto('/')}>▶ Play Again</button>
+		<button class="btn-play" onclick={handleBack}>▶ Play Again</button>
 	</main>
 </div>
