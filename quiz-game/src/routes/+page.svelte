@@ -1,11 +1,19 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import './start page.css';
+	import { onMount, onDestroy } from 'svelte';
+	import { audioManager } from '$lib/audioManager.svelte';
 
 	let name = $state('');
 	let error = $state('');
-	
+
+	onMount(() => {
+		// Play BGM on mount. If blocked, it will play on first click.
+		audioManager.playBgm();
+	});
+
 	function handleStart() {
+		audioManager.playSfx('click');
 		if (!name.trim()) {
 			error = 'Please enter your name!';
 			return;
@@ -14,6 +22,7 @@
 	}
 
 	function handleLeaderboard() {
+		audioManager.playSfx('click');
 		goto('/leaderboard');
 	}
 
@@ -37,10 +46,9 @@
 
 	<main class="content">
 		<h1 class="title">日本語クイズ</h1>
-	
+
 		<div class="input-group">
-			<label for="name-input">
-			</label>
+			<label for="name-input"> </label>
 			<div class="input-wrap">
 				<input
 					id="name-input"
@@ -68,6 +76,3 @@
 		</div>
 	</main>
 </div>
-
-		
-
