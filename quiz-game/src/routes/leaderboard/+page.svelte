@@ -42,6 +42,9 @@
 		href="https://fonts.googleapis.com/css2?family=Zen+Dots&family=Noto+Sans+JP:wght@400;700&display=swap"
 		rel="stylesheet"
 	/>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"/>
+	<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet"/>
+
 </svelte:head>
 
 <div class="page">
@@ -49,11 +52,11 @@
 	<div class="orb orb-2"></div>
 	<div class="bg-grid"></div>
 
-	<main class="card">
+	<main class="leaderboard-card">
 		<!-- Header -->
 		<div class="header">
-			<button class="back-btn" onclick={() => goto('/')}>← Back</button>
-			<h1 class="title">🏆 Leaderboard</h1>
+			<button class="leaderboard-back-btn" onclick={() => goto('/')}>← Back</button>
+			<h1 class="leaderboard-title">Leaderboard</h1>
 		</div>
 
 		<!-- Table area -->
