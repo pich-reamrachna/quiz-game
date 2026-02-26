@@ -93,9 +93,15 @@ class GameEngine {
         const randomIndex = Math.floor(Math.random() * unusedQuestions.length);
         const next = unusedQuestions[randomIndex];
 
+        const labels = ["A", "B", "C"] as const;
+
         // shuffle options (shuffleArray find at line 111)
-        const shuffledOptions = this.shuffleArray(next.choices).map(choice => ({
-            ...choice}));
+        const shuffledOptions = this
+            .shuffleArray(next.choices)
+            .map((choice, index) => ({
+                ...choice, 
+                key: labels[index]
+            }));
 
         // mark as used and update state
         this.usedQuestionIndices.add(next.id);
