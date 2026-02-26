@@ -58,14 +58,14 @@
 		<h1 class="startPage-title">日本語クイズ</h1>
 	
 		<div class="input-group">
-			<label for="name-input"> </label>
+			<label for="name-input">名前を入力してください</label>
 			<div class="input-wrap">
 				<input
 					id="name-input"
 					type="text"
 					bind:value={name}
 					onkeydown={handleKeydown}
-					placeholder="Enter your name..."
+					placeholder="名前を入力してください..."
 					maxlength={20}
 					autocomplete="off"
 				/>

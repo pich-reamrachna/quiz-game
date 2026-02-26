@@ -139,28 +139,32 @@ class AudioManager {
      * Volume transitions
      */
     async fadeIn(duration = 2000) {
-        if (!this.bgm) return;
+        const targetBgm = this.bgm;
+        if (!targetBgm) return;
         const steps = 40;
         const volStep = this.volume / steps;
-        this.bgm.volume = 0;
+        targetBgm.volume = 0;
 
         for (let i = 0; i < steps; i++) {
             await new Promise(r => setTimeout(r, duration / steps));
-            if (this.bgm) this.bgm.volume = Math.min(this.volume, this.bgm.volume + volStep);
+            if (this.bgm !== targetBgm) return;
+            targetBgm.volume = Math.min(this.volume, targetBgm.volume + volStep);
         }
     }
 
     async fadeOut(duration = 1000) {
-        if (!this.bgm) return;
+        const targetBgm = this.bgm;
+        if (!targetBgm) return;
         const steps = 20;
-        const volStep = this.bgm.volume / steps;
+        const volStep = targetBgm.volume / steps;
 
         for (let i = 0; i < steps; i++) {
             await new Promise(r => setTimeout(r, duration / steps));
-            if (this.bgm) this.bgm.volume = Math.max(0, this.bgm.volume - volStep);
+            if (this.bgm !== targetBgm) return;
+            targetBgm.volume = Math.max(0, targetBgm.volume - volStep);
         }
 
-        if (this.bgm) {
+        if (this.bgm === targetBgm) {
             this.bgm.pause();
             this.bgm = null;
             this.currentBgmPath = null;
