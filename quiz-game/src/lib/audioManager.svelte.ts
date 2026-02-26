@@ -85,7 +85,9 @@ class AudioManager {
             return;
         }
 
-        if (this.bgm) await this.fadeOut();
+        if (token !== this.transitionToken) return;
+
+        if (this.bgm) await this.fadeOut(1000, token);
 
         if (token !== this.transitionToken) return;
 
@@ -104,7 +106,9 @@ class AudioManager {
     private async playBgmCustom(path: string, loop: boolean = true) {
         const token = ++this.transitionToken;
         if (!browser) return;
-        if (this.bgm) await this.fadeOut();
+        if (token !== this.transitionToken) return;
+        
+        if (this.bgm) await this.fadeOut(1000, token);
 
         if (token !== this.transitionToken) return;
 
@@ -160,7 +164,9 @@ class AudioManager {
         }
     }
 
-    async fadeOut(duration = 1000) {
+    async fadeOut(duration = 1000, token?: number) {
+        if (token !== undefined && token !== this.transitionToken) return;
+        
         const targetBgm = this.bgm;
         if (!targetBgm) return;
         const steps = 20;
@@ -168,12 +174,14 @@ class AudioManager {
 
         for (let i = 0; i < steps; i++) {
             await new Promise(r => setTimeout(r, duration / steps));
+            // Check if this transition is still valid
+            if (token !== undefined && token !== this.transitionToken) return;
             if (this.bgm !== targetBgm) return;
             targetBgm.volume = Math.max(0, targetBgm.volume - volStep);
         }
 
         if (this.bgm === targetBgm) {
-            this.bgm.pause();
+            targetBgm.pause();
             this.bgm = null;
             this.currentBgmPath = null;
         }
