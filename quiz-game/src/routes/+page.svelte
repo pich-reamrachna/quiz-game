@@ -65,7 +65,7 @@
 					type="text"
 					bind:value={name}
 					onkeydown={handleKeydown}
-					placeholder="名前を入力してください..."
+					placeholder="skibidii"
 					maxlength={20}
 					autocomplete="off"
 				/>
@@ -84,8 +84,12 @@
 				<img src="/play-button.png" alt="Play" />
 			</button>
 			<!-- Temporary Button -->
-			<button class="pixel-btn" onclick={handleCredit}>
-				<img src="/backdoor.png" alt="Credit" />
+			
+		</div>
+
+		<div class="btm-btn-group">
+			<button class="credit-btn" onclick={handleCredit}>
+				<img src="/star.png" alt="Credit" />
 			</button>
 		</div>
 	</main>
