@@ -100,12 +100,14 @@ class AudioManager {
         if (isPlaylist) {
             // 1. End of track fallback
             audio.onended = () => {
+                if (this.bgm !== audio) return;
                 if (this.crossFadeTriggered) return;
                 this.advancePlaylist();
             };
 
             // 2. Cross-fade trigger: start next song before this one ends
             audio.ontimeupdate = () => {
+                if (this.bgm !== audio) return;
                 if (this.crossFadeTriggered) return;
                 if (audio.duration && audio.duration - audio.currentTime < CROSS_FADE_TIME) {
                     this.crossFadeTriggered = true;
@@ -192,9 +194,15 @@ class AudioManager {
         if (!browser) return;
         const unlock = () => {
             this.unlockAudio();
-            if (this.hasUnlocked) ['click', 'keydown', 'touchstart'].forEach(e => window.removeEventListener(e, unlock));
+            if (this.hasUnlocked) {
+                ['click', 'keydown', 'touchstart'].forEach((e) => {
+                    window.removeEventListener(e, unlock);
+                });
+            }
         };
-        ['click', 'keydown', 'touchstart'].forEach(e => window.addEventListener(e, unlock));
+        ['click', 'keydown', 'touchstart'].forEach((e) => {
+            window.addEventListener(e, unlock);
+        });
     }
 
     toggleMute() { this.isMuted = !this.isMuted; }
