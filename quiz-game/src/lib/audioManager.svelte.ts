@@ -1,16 +1,11 @@
 import { browser } from '$app/environment';
 
-/** 
- * UI Sound Effect Asset Imports 
- */
+// Asset Imports
 import clickSfx from '$lib/audio/UISounds_018_click.wav';
 import wrongSfx from '$lib/audio/UISounds_021_wrong.wav';
 import correctSfx from '$lib/audio/UISounds_023_correct.wav';
 import countdownSfx from '$lib/audio/paoloargento-quiz-countdown-194417.mp3';
 
-/** 
- * Funk BGM Asset Imports (1-9)
- */
 import bgm1 from "$lib/audio/funk bgm/DavidKBD - Pink Bloom Pack - 01 - Pink Bloom.ogg";
 import bgm2 from "$lib/audio/funk bgm/DavidKBD - Pink Bloom Pack - 02 - Portal to Underworld.ogg";
 import bgm3 from "$lib/audio/funk bgm/DavidKBD - Pink Bloom Pack - 03 - To the Unknown.ogg";
@@ -21,272 +16,185 @@ import bgm7 from "$lib/audio/funk bgm/DavidKBD - Pink Bloom Pack - 07 - The Hidd
 import bgm8 from "$lib/audio/funk bgm/DavidKBD - Pink Bloom Pack - 08 - Lost Spaceship's Signal.ogg";
 import bgm9 from "$lib/audio/funk bgm/DavidKBD - Pink Bloom Pack - 09 - Lightyear City.ogg";
 
-const SFX_MAP = {
-    click: clickSfx,
-    wrong: wrongSfx,
-    correct: correctSfx,
-    countdown: countdownSfx
-};
-
 const BGM_LIST = [bgm1, bgm2, bgm3, bgm4, bgm5, bgm6, bgm7, bgm8, bgm9];
+const SFX_MAP = { click: clickSfx, wrong: wrongSfx, correct: correctSfx, countdown: countdownSfx };
+
+// --- AUDIO SETTINGS  ---
+const MASTER_VOLUME = 0.5;    // Global volume limit (0.0 to 1.0)
+const FADE_DURATION = 2000;   // Duration of fade-in/out in ms
+const CROSS_FADE_TIME = 3;    // Seconds skip before end to start cross-fade
+// ---------------------------------------------------
 
 /**
- * AudioManager handles all BGM transitions, SFX, and Autoplay policies.
- * Uses Svelte 5 runes for reactive mute state.
+ * Manage all game audio: BGM playlists, SFX, and fade effects.
  */
 class AudioManager {
-    private transitionToken = 0;
     private bgm: HTMLAudioElement | null = null;
     private currentBgmPath: string | null = null;
-    private _currentPlaylistIndex: number | null = null;
+    private playlistIndex: number | null = null;
+    private transitionToken = 0;
     private hasUnlocked = false;
+    private crossFadeTriggered = false;
 
-    // Persist mute state across sessions
+    // Reactivity via Svelte 5 runes
     private _isMuted = $state(browser ? (localStorage.getItem('audio_muted') === 'true') : false);
-    private _volume = 1; // Application output always matches system level
+    private readonly volume = MASTER_VOLUME;
 
     get isMuted() { return this._isMuted; }
-    set isMuted(value: boolean) {
-        this._isMuted = value;
-        if (browser) localStorage.setItem('audio_muted', String(value));
-        if (this.bgm) this.bgm.muted = value;
+    set isMuted(v: boolean) {
+        this._isMuted = v;
+        if (browser) localStorage.setItem('audio_muted', String(v));
+        if (this.bgm) this.bgm.muted = v;
     }
 
-    get volume() { return this._volume; }
-
     /**
-     * Plays the shared Home screen BGM (persists across Home/Credits)
+     * Start/Resume the Home/Credit music.
+     * Picks a random starting song once, then cycles sequentially (1->2->...->9->1)
      */
     async playHomeBgm() {
         if (!browser) return;
         
-        // If we are already playing a funk BGM, don't restart or skip it
-        const isHomeBgmPlaying = this.bgm && 
-                                 this.currentBgmPath && 
-                                 BGM_LIST.includes(this.currentBgmPath);
+        // Don't restart if already playing a playlist track
+        if (this.bgm && this.currentBgmPath && BGM_LIST.includes(this.currentBgmPath) && !this.bgm.paused) return;
 
-        if (isHomeBgmPlaying && !this.bgm?.paused) {
-            console.log('Home BGM already playing, skipping redundant call');
-            return;
+        if (this.playlistIndex === null) {
+            this.playlistIndex = Math.floor(Math.random() * BGM_LIST.length);
         }
 
-        // Start playing the playlist without forcing the next track
-        await this.playBgm(undefined, true, false);
+        await this.playTrack(BGM_LIST[this.playlistIndex], true);
     }
 
     /**
-     * Specifically used for the Quiz gameplay countdown
+     * Transition to the Quiz gameplay countdown music.
      */
     async playQuizBgm() {
-        await this.playBgmCustom(SFX_MAP.countdown, false); // Loop countdown
-    }
-
-    
-    async playBgm(index?: number, isPlaylist: boolean = true, forceNext: boolean = false) {
-        if (!browser) return;
-        const token = ++this.transitionToken;
-        
-        // 1. Resolve which track to play
-        if (index !== undefined) {
-            this._currentPlaylistIndex = index;
-        } else if (this._currentPlaylistIndex === null) {
-            // Pick a random starting point first time
-            this._currentPlaylistIndex = Math.floor(Math.random() * BGM_LIST.length);
-        } else if (forceNext && isPlaylist) {
-            // Explicit advance to next song
-            this._currentPlaylistIndex = (this._currentPlaylistIndex + 1) % BGM_LIST.length;
-        }
-
-        const path = BGM_LIST[this._currentPlaylistIndex];
-        
-        // 2. Check if we are already playing this exact file
-        if (this.currentBgmPath === path && this.bgm) {
-            this.resumeBgm();
-            return;
-        }
-
-        // 3. Ensure this transition is still the most recent one
-        if (token !== this.transitionToken) return;
-
-        // Fade out existing audio if any
-        if (this.bgm) await this.fadeOut(1000, token);
-
-        // Check again after async fade
-        if (token !== this.transitionToken) return;
-
-        // 4. Create and configure new audio element
-        const audio = new Audio(path);
-        audio.loop = !isPlaylist;
-        audio.volume = 0; // Prepare for fade in
-        audio.muted = this.isMuted;
-        
-        this.bgm = audio;
-        this.currentBgmPath = path;
-
-        // Set up event listeners for playlist progression and errors
-        if (isPlaylist) {
-            audio.addEventListener('ended', () => {
-                console.log(`BGM ${this._currentPlaylistIndex} ended, advancing...`);
-                // Advance to next track automatically
-                this.playBgm(undefined, true, true);
-            });
-        }
-
-        audio.addEventListener('error', (e) => {
-            console.error('BGM Error, attempting next track:', e);
-            if (isPlaylist) this.playBgm(undefined, true, true);
-        });
-
-        this.attemptPlay();
+        await this.playTrack(SFX_MAP.countdown, false);
     }
 
     /**
-     * Internal BGM player for specific paths (non-library assets)
+     * Core playback engine. Handles fade transitions and playlist auto-advance.
      */
-    private async playBgmCustom(path: string, isPlaylist: boolean = true) {
-        const token = ++this.transitionToken;
+    private async playTrack(path: string, isPlaylist: boolean) {
         if (!browser) return;
-        if (token !== this.transitionToken) return;
-        
-        if (this.bgm) await this.fadeOut(1000, token);
+        const token = ++this.transitionToken;
+        const oldBgm = this.bgm;
+
+        // Reset cross-fade flag for new track
+        this.crossFadeTriggered = false;
+
+        // Smoothly fade out the OLD track if it's currently playing a different song
+        if (oldBgm && this.currentBgmPath !== path) {
+            this.fadeOutElement(oldBgm, FADE_DURATION, token);
+        }
 
         if (token !== this.transitionToken) return;
 
         const audio = new Audio(path);
         audio.loop = !isPlaylist;
-        audio.volume = 0;
         audio.muted = this.isMuted;
+        audio.volume = 0; 
         
         this.bgm = audio;
         this.currentBgmPath = path;
 
         if (isPlaylist) {
-            audio.addEventListener('ended', () => this.playBgm(undefined, true, true));
+            // 1. End of track fallback
+            audio.onended = () => {
+                if (this.crossFadeTriggered) return;
+                this.advancePlaylist();
+            };
+
+            // 2. Cross-fade trigger: start next song before this one ends
+            audio.ontimeupdate = () => {
+                if (this.crossFadeTriggered) return;
+                if (audio.duration && audio.duration - audio.currentTime < CROSS_FADE_TIME) {
+                    this.crossFadeTriggered = true;
+                    this.advancePlaylist();
+                }
+            };
         }
 
         this.attemptPlay();
     }
 
-    /**
-     * Handles Autoplay blocks by falling back to muted playback if necessary
-     */
+    private advancePlaylist() {
+        this.playlistIndex = (this.playlistIndex! + 1) % BGM_LIST.length;
+        this.playTrack(BGM_LIST[this.playlistIndex], true);
+    }
+
     private async attemptPlay() {
-        const audio = this.bgm;
-        if (!audio) return;
-
-        try {
-            await audio.play();
-            // If successful unmuted, start volume fade in
-            this.fadeIn();
-        } catch (e) {
-            console.log('Unmuted playback blocked, falling back to muted...');
-            // Fallback: start muted
-            audio.muted = true;
-            audio.volume = this.volume; 
-            audio.play().catch(e2 => console.error('Even muted playback failed:', e2));
-        }
-    }
-
-    private async resumeBgm() {
-        if (!this.bgm || !this.bgm.paused) return;
+        if (!this.bgm) return;
         try {
             await this.bgm.play();
-            this.fadeIn();
+            this.fadeIn(FADE_DURATION);
         } catch {
-            this.attemptPlay();
+            if (this.bgm) {
+                this.bgm.muted = true;
+                this.bgm.volume = this.volume;
+                this.bgm.play().catch(() => {});
+            }
         }
     }
 
-    /**
-     * Smoothly increases volume from 0 to target
-     */
-    async fadeIn(duration = 2000) {
-        const targetBgm = this.bgm;
-        if (!targetBgm) return;
-        
-        const steps = 40;
-        const volStep = this.volume / steps;
-        targetBgm.volume = 0;
-
+    async fadeIn(duration: number) {
+        const audio = this.bgm;
+        if (!audio) return;
+        const steps = 30, interval = duration / steps, stepVal = this.volume / steps;
+        audio.volume = 0;
         for (let i = 0; i < steps; i++) {
-            await new Promise(r => setTimeout(r, duration / steps));
-            // Abort if the manager has switched to a different BGM
-            if (this.bgm !== targetBgm) return;
-            targetBgm.volume = Math.min(this.volume, targetBgm.volume + volStep);
+            await new Promise(r => setTimeout(r, interval));
+            if (this.bgm !== audio) return;
+            audio.volume = Math.min(this.volume, audio.volume + stepVal);
         }
     }
 
-    /**
-     * Smoothly decreases volume to 0 before stopping
-     */
-    async fadeOut(duration = 1000, token?: number) {
-        const targetBgm = this.bgm;
-        if (!targetBgm) return;
-
-        const steps = 20;
-        const volStep = targetBgm.volume / steps;
-
+    // New version that can target specific elements for cross-fading
+    async fadeOutElement(audio: HTMLAudioElement, duration: number, token?: number) {
+        if (!audio) return;
+        const steps = 20, interval = duration / steps, stepVal = audio.volume / steps;
         for (let i = 0; i < steps; i++) {
-            await new Promise(r => setTimeout(r, duration / steps));
-            // Abort if transition token expires or BGM changes
-            if (token !== undefined && token !== this.transitionToken) return;
-            if (this.bgm !== targetBgm) return;
-            targetBgm.volume = Math.max(0, targetBgm.volume - volStep);
+            await new Promise(r => setTimeout(r, interval));
+            // Only stop if a NEW explicit transition happened (token check)
+            if (token && token !== this.transitionToken) break;
+            audio.volume = Math.max(0, audio.volume - stepVal);
         }
-
-        if (this.bgm === targetBgm) {
-            targetBgm.pause();
+        audio.pause();
+        if (this.bgm === audio) {
             this.bgm = null;
             this.currentBgmPath = null;
         }
     }
 
-    /**
-     * Trigger a UI sound effect
-     */
+    // Kept for backward compatibility if needed elsewhere
+    async fadeOut(duration: number, token?: number) {
+        if (this.bgm) await this.fadeOutElement(this.bgm, duration, token);
+    }
+
     playSfx(type: keyof typeof SFX_MAP) {
         if (!browser) return;
         const sfx = new Audio(SFX_MAP[type]);
-        sfx.volume = this.volume;
         sfx.muted = this.isMuted;
         sfx.play().catch(() => {});
-        
-        // Use user interaction as an opportunity to unlock unmuted BGM
         this.unlockAudio();
     }
 
-    /**
-     * Unlocks unmuted BGM playback once a user interaction has been detected
-     */
     private unlockAudio() {
-        if (!this.bgm) return;
-        
-        // Unmute if user interaction allowed it
+        if (!this.bgm || this.hasUnlocked) return;
         if (!this.isMuted) this.bgm.muted = false;
-
         if (this.bgm.paused) {
-            this.bgm.play().then(() => {
-                this.hasUnlocked = true;
-                this.fadeIn();
-            }).catch(() => {});
-        } else if (!this.hasUnlocked) {
-            this.fadeIn();
+            this.bgm.play().then(() => (this.hasUnlocked = true)).catch(() => {});
+        } else {
             this.hasUnlocked = true;
         }
     }
 
-    /**
-     * Sets up global window listeners to capture the first user interaction
-     */
     init() {
         if (!browser) return;
-        const handler = () => {
+        const unlock = () => {
             this.unlockAudio();
-            if (this.hasUnlocked) {
-                ['click', 'keydown', 'touchstart'].forEach(e => window.removeEventListener(e, handler));
-            }
+            if (this.hasUnlocked) ['click', 'keydown', 'touchstart'].forEach(e => window.removeEventListener(e, unlock));
         };
-        ['click', 'keydown', 'touchstart'].forEach(e => window.addEventListener(e, handler));
+        ['click', 'keydown', 'touchstart'].forEach(e => window.addEventListener(e, unlock));
     }
 
     toggleMute() { this.isMuted = !this.isMuted; }
