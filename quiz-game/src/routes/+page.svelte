@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import './start page.css';
-	import { onMount, onDestroy } from 'svelte';
-	import { audioManager } from '$lib/audioManager.svelte';
+	import './startPage.css';
 
 	let name = $state('');
 	let error = $state('');
@@ -26,6 +24,10 @@
 		goto('/leaderboard');
 	}
 
+	function handleCredit() {
+		goto('/credit');
+	}
+
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Enter') handleStart();
 	}
@@ -39,14 +41,19 @@
 		href="https://fonts.googleapis.com/css2?family=Zen+Dots&family=Noto+Sans+JP:wght@400;700&display=swap"
 		rel="stylesheet"
 	/>
+	<link
+		rel="preconnect" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"	
+	/>
+	<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+
 </svelte:head>
 
-<div class="page">
+<div class="start-page">
 	<div class="bg-grid"></div>
 
 	<main class="content">
-		<h1 class="title">日本語クイズ</h1>
-
+		<h1 class="startPage-title">日本語クイズ</h1>
+	
 		<div class="input-group">
 			<label for="name-input"> </label>
 			<div class="input-wrap">
@@ -62,7 +69,7 @@
 				<span class="input-count">{name.length}/20</span>
 			</div>
 			{#if error}
-				<p class="error-msg">⚠ {error}</p>
+				<p class="error-msg">{error}</p>
 			{/if}
 		</div>
 
@@ -72,6 +79,10 @@
 			</button>
 			<button class="pixel-btn" onclick={handleStart}>
 				<img src="/play-button.png" alt="Play" />
+			</button>
+			<!-- Temporary Button -->
+			<button class="pixel-btn" onclick={handleCredit}>
+				<img src="/backdoor.png" alt="Credit" />
 			</button>
 		</div>
 	</main>

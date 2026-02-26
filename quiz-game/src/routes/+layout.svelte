@@ -5,7 +5,6 @@
 	let { children } = $props();
 </script>
 
-<svelte:head><link rel="icon" href="/favicon.png" /></svelte:head>
-
+<svelte:head><link rel="icon" href="" /></svelte:head>
 {@render children()}
 <MuteButton />
