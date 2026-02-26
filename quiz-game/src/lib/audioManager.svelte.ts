@@ -64,7 +64,7 @@ class AudioManager {
 
         this.bgm = new Audio(path);
         this.bgm.loop = loop;
-        this.bgm.volume = this.volume;
+        this.bgm.volume = 0; // Start at 0 for fade in
         this.bgm.muted = this.isMuted;
         this.currentBgmPath = path;
         
@@ -75,10 +75,13 @@ class AudioManager {
         if (!this.bgm) return;
         try {
             await this.bgm.play();
+            // If we get here, unmuted audio is allowed
+            this.fadeIn();
         } catch (e) {
             console.log('Autoplay blocked, trying muted...');
             if (this.bgm) {
                 this.bgm.muted = true;
+                this.bgm.volume = this.volume; // Set to target volume for when it's unmuted later
                 try {
                     await this.bgm.play();
                 } catch (e2) {
@@ -92,6 +95,7 @@ class AudioManager {
         if (!this.bgm || !this.bgm.paused) return;
         try {
             await this.bgm.play();
+            this.fadeIn();
         } catch (e) {
             this.attemptPlay();
         }
@@ -106,9 +110,27 @@ class AudioManager {
         if (this.bgm) await this.fadeOut();
         this.bgm = new Audio(path);
         this.bgm.loop = loop;
-        this.bgm.volume = this.volume;
+        this.bgm.volume = 0; // Start at 0 for fade in
         this.bgm.muted = this.isMuted;
         this.attemptPlay();
+    }
+
+    async fadeIn(duration: number = 2000) {
+        if (!this.bgm) return;
+        
+        const targetVolume = this.volume;
+        const steps = 40;
+        const stepTime = duration / steps;
+        const volumeStep = targetVolume / steps;
+
+        this.bgm.volume = 0;
+
+        for (let i = 0; i < steps; i++) {
+            await new Promise(resolve => setTimeout(resolve, stepTime));
+            if (this.bgm) {
+                this.bgm.volume = Math.min(targetVolume, this.bgm.volume + volumeStep);
+            }
+        }
     }
 
     async fadeOut(duration: number = 1000) {
@@ -158,9 +180,13 @@ class AudioManager {
                 .then(() => {
                     this.hasUnlocked = true;
                     console.log('Audio unlocked via interaction');
+                    this.fadeIn(); // Fade in when truly started
                 })
                 .catch(() => {});
         } else {
+            if (!this.hasUnlocked) {
+                this.fadeIn(); // Fade in if it was playing muted
+            }
             this.hasUnlocked = true;
         }
     }
