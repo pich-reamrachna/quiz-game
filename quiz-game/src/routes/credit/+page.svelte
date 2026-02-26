@@ -1,7 +1,17 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
     import './credit.css';
+    import { onMount } from 'svelte';
+    import { audioManager } from '$lib/audioManager.svelte';
 
+    onMount(() => {
+        audioManager.playHomeBgm();
+    });
+
+    function handleBack() {
+        audioManager.playSfx('click');
+        goto('/');
+    }
 </script>
 
 <svelte:head>
@@ -26,7 +36,7 @@
             
         </main>
 
-        <button class="credit-back-btn" onclick={() => goto('/')}>← Back</button>
+        <button class="credit-back-btn" onclick={handleBack}>← Back</button>
     </div>
     
 </div>

@@ -1,12 +1,16 @@
 import { browser } from '$app/environment';
 
-// SFX
+/** 
+ * UI Sound Effect Asset Imports 
+ */
 import clickSfx from '$lib/audio/UISounds_018_click.wav';
 import wrongSfx from '$lib/audio/UISounds_021_wrong.wav';
 import correctSfx from '$lib/audio/UISounds_023_correct.wav';
 import countdownSfx from '$lib/audio/paoloargento-quiz-countdown-194417.mp3';
 
-// BGM
+/** 
+ * Funk BGM Asset Imports (1-9)
+ */
 import bgm1 from "$lib/audio/funk bgm/DavidKBD - Pink Bloom Pack - 01 - Pink Bloom.ogg";
 import bgm2 from "$lib/audio/funk bgm/DavidKBD - Pink Bloom Pack - 02 - Portal to Underworld.ogg";
 import bgm3 from "$lib/audio/funk bgm/DavidKBD - Pink Bloom Pack - 03 - To the Unknown.ogg";
@@ -26,31 +30,52 @@ const SFX_MAP = {
 
 const BGM_LIST = [bgm1, bgm2, bgm3, bgm4, bgm5, bgm6, bgm7, bgm8, bgm9];
 
+/**
+ * AudioManager handles all BGM transitions, SFX, and Autoplay policies.
+ * Uses Svelte 5 runes for reactive mute state.
+ */
 class AudioManager {
     private bgm: HTMLAudioElement | null = null;
     private currentBgmPath: string | null = null;
+    private homeBgmIndex: number | null = null;
+    private hasUnlocked = false;
+
+    // Persist mute state across sessions
     private _isMuted = $state(browser ? (localStorage.getItem('audio_muted') === 'true') : false);
-    private _volume = 1; // Always match system level (1.0)
+    private _volume = 1; // Application output always matches system level
 
-    get isMuted() {
-        return this._isMuted;
-    }
-
+    get isMuted() { return this._isMuted; }
     set isMuted(value: boolean) {
         this._isMuted = value;
         if (browser) localStorage.setItem('audio_muted', String(value));
-        if (this.bgm) {
-            this.bgm.muted = value;
+        if (this.bgm) this.bgm.muted = value;
+    }
+
+    get volume() { return this._volume; }
+
+    /**
+     * Plays the shared Home screen BGM (persists across Home/Credits)
+     */
+    async playHomeBgm() {
+        if (!browser) return;
+        if (this.homeBgmIndex === null) {
+            this.homeBgmIndex = Math.floor(Math.random() * BGM_LIST.length);
         }
+        await this.playBgm(this.homeBgmIndex);
     }
 
-    get volume() {
-        return this._volume;
+    /**
+     * Specifically used for the Quiz gameplay countdown
+     */
+    async playQuizBgm() {
+        await this.playBgmCustom(SFX_MAP.countdown, true);
     }
 
+    /**
+     * Core BGM logic: Handles fade transitions and path checking
+     */
     async playBgm(index?: number, loop: boolean = true) {
         if (!browser) return;
-        
         const path = index !== undefined ? BGM_LIST[index] : BGM_LIST[Math.floor(Math.random() * BGM_LIST.length)];
         
         if (this.currentBgmPath === path && this.bgm) {
@@ -58,35 +83,44 @@ class AudioManager {
             return;
         }
 
-        if (this.bgm) {
-            await this.fadeOut();
-        }
+        if (this.bgm) await this.fadeOut();
 
         this.bgm = new Audio(path);
         this.bgm.loop = loop;
-        this.bgm.volume = 0; // Start at 0 for fade in
+        this.bgm.volume = 0; // Prepare for fade in
         this.bgm.muted = this.isMuted;
         this.currentBgmPath = path;
         
         this.attemptPlay();
     }
 
+    /**
+     * Internal BGM player for specific paths (non-library assets)
+     */
+    private async playBgmCustom(path: string, loop: boolean = true) {
+        if (!browser) return;
+        if (this.bgm) await this.fadeOut();
+        this.bgm = new Audio(path);
+        this.bgm.loop = loop;
+        this.bgm.volume = 0;
+        this.bgm.muted = this.isMuted;
+        this.attemptPlay();
+    }
+
+    /**
+     * Handles Autoplay blocks by falling back to muted playback
+     */
     private async attemptPlay() {
         if (!this.bgm) return;
         try {
             await this.bgm.play();
-            // If we get here, unmuted audio is allowed
-            this.fadeIn();
-        } catch (e) {
-            console.log('Autoplay blocked, trying muted...');
+            this.fadeIn(); // Fade in if site allows unmuted autoplay
+        } catch {
+            // Muted fallback for restricted browsers (Safari/Chrome)
             if (this.bgm) {
                 this.bgm.muted = true;
-                this.bgm.volume = this.volume; // Set to target volume for when it's unmuted later
-                try {
-                    await this.bgm.play();
-                } catch (e2) {
-                    console.error('Muted autoplay also failed:', e2);
-                }
+                this.bgm.volume = this.volume; 
+                this.bgm.play().catch(() => {});
             }
         }
     }
@@ -96,56 +130,34 @@ class AudioManager {
         try {
             await this.bgm.play();
             this.fadeIn();
-        } catch (e) {
+        } catch {
             this.attemptPlay();
         }
     }
 
-    async playQuizBgm() {
-        await this.playBgmCustom(SFX_MAP.countdown, true);
-    }
-
-    private async playBgmCustom(path: string, loop: boolean = true) {
-        if (!browser) return;
-        if (this.bgm) await this.fadeOut();
-        this.bgm = new Audio(path);
-        this.bgm.loop = loop;
-        this.bgm.volume = 0; // Start at 0 for fade in
-        this.bgm.muted = this.isMuted;
-        this.attemptPlay();
-    }
-
-    async fadeIn(duration: number = 2000) {
+    /**
+     * Volume transitions
+     */
+    async fadeIn(duration = 2000) {
         if (!this.bgm) return;
-        
-        const targetVolume = this.volume;
         const steps = 40;
-        const stepTime = duration / steps;
-        const volumeStep = targetVolume / steps;
-
+        const volStep = this.volume / steps;
         this.bgm.volume = 0;
 
         for (let i = 0; i < steps; i++) {
-            await new Promise(resolve => setTimeout(resolve, stepTime));
-            if (this.bgm) {
-                this.bgm.volume = Math.min(targetVolume, this.bgm.volume + volumeStep);
-            }
+            await new Promise(r => setTimeout(r, duration / steps));
+            if (this.bgm) this.bgm.volume = Math.min(this.volume, this.bgm.volume + volStep);
         }
     }
 
-    async fadeOut(duration: number = 1000) {
+    async fadeOut(duration = 1000) {
         if (!this.bgm) return;
-        
-        const startVolume = this.bgm.volume;
         const steps = 20;
-        const stepTime = duration / steps;
-        const volumeStep = startVolume / steps;
+        const volStep = this.bgm.volume / steps;
 
         for (let i = 0; i < steps; i++) {
-            await new Promise(resolve => setTimeout(resolve, stepTime));
-            if (this.bgm) {
-                this.bgm.volume = Math.max(0, this.bgm.volume - volumeStep);
-            }
+            await new Promise(r => setTimeout(r, duration / steps));
+            if (this.bgm) this.bgm.volume = Math.max(0, this.bgm.volume - volStep);
         }
 
         if (this.bgm) {
@@ -155,61 +167,51 @@ class AudioManager {
         }
     }
 
+    /**
+     * Trigger a UI sound effect
+     */
     playSfx(type: keyof typeof SFX_MAP) {
         if (!browser) return;
-        const audio = new Audio(SFX_MAP[type]);
-        audio.volume = this.volume;
-        audio.muted = this.isMuted;
-        audio.play().catch(e => console.error('SFX play failed:', e));
-
-        // Interaction detected, try to ensure BGM is playing
-        this.unlockAudio();
+        const sfx = new Audio(SFX_MAP[type]);
+        sfx.volume = this.volume;
+        sfx.muted = this.isMuted;
+        sfx.play().catch(() => {});
+        this.unlockAudio(); // Interaction detected, try to unmute BGM
     }
 
-    private hasUnlocked = false;
+    /**
+     * Unlocks audio context on first user interaction
+     */
     private unlockAudio() {
         if (!this.bgm) return;
-        
-        // Restore volume/mute state on interaction
-        if (!this.isMuted) {
-            this.bgm.muted = false;
-        }
+        if (!this.isMuted) this.bgm.muted = false;
 
         if (this.bgm.paused) {
-            this.bgm.play()
-                .then(() => {
-                    this.hasUnlocked = true;
-                    console.log('Audio unlocked via interaction');
-                    this.fadeIn(); // Fade in when truly started
-                })
-                .catch(() => {});
-        } else {
-            if (!this.hasUnlocked) {
-                this.fadeIn(); // Fade in if it was playing muted
-            }
+            this.bgm.play().then(() => {
+                this.hasUnlocked = true;
+                this.fadeIn();
+            }).catch(() => {});
+        } else if (!this.hasUnlocked) {
+            this.fadeIn();
             this.hasUnlocked = true;
         }
     }
 
-    // Call this to setup global unlock listeners
+    /**
+     * Initialize global window listeners to unlock audio
+     */
     init() {
         if (!browser) return;
-        const unlock = () => {
+        const handler = () => {
             this.unlockAudio();
             if (this.hasUnlocked) {
-                window.removeEventListener('click', unlock);
-                window.removeEventListener('keydown', unlock);
-                window.removeEventListener('touchstart', unlock);
+                ['click', 'keydown', 'touchstart'].forEach(e => window.removeEventListener(e, handler));
             }
         };
-        window.addEventListener('click', unlock);
-        window.addEventListener('keydown', unlock);
-        window.addEventListener('touchstart', unlock);
+        ['click', 'keydown', 'touchstart'].forEach(e => window.addEventListener(e, handler));
     }
 
-    toggleMute() {
-        this.isMuted = !this.isMuted;
-    }
+    toggleMute() { this.isMuted = !this.isMuted; }
 }
 
 export const audioManager = new AudioManager();

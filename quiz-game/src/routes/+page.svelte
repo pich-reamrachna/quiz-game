@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { onMount, onDestroy } from 'svelte';
+	import { audioManager } from '$lib/audioManager.svelte';
 	import './startPage.css';
 
 	let name = $state('');
@@ -7,7 +9,7 @@
 
 	onMount(() => {
 		// Play BGM on mount. If blocked, it will play on first click.
-		audioManager.playBgm();
+		audioManager.playHomeBgm();
 	});
 
 	function handleStart() {
@@ -25,6 +27,7 @@
 	}
 
 	function handleCredit() {
+		audioManager.playSfx('click');
 		goto('/credit');
 	}
 
