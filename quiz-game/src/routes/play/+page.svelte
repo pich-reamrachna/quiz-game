@@ -11,8 +11,7 @@
 	const TOTAL_TIME = 5;
 	const engine = createGameEngine(QUESTIONS);
 
-	let name = $derived($page.url.searchParams.get('name') ?? '');
-
+	let name = $state('')
 	let currentQuestion = $state<Question | null>(null);
 	let questionIndex = $state(0);
 	let score = $state(0);
@@ -98,10 +97,16 @@
 	}
 
 	onMount(() => {
-		if (!name) {
+
+		// retrieve the name from browser ram
+		const storedName = sessionStorage.getItem('playerName')
+
+		if (!storedName) {
 			goto('/');
 			return;
 		}
+		name = storedName
+
 
 		audioManager.playQuizBgm();
 		
