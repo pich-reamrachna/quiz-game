@@ -130,7 +130,7 @@
 			clearTimeout(pendingAdvance);
 		}
 		engine.stopTimer();
-		audioManager.fadeOut();
+		audioManager.fadeOut(1000);
 	});
 </script>
 

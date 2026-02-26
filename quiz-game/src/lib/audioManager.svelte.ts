@@ -1,16 +1,11 @@
 import { browser } from '$app/environment';
 
-/** 
- * UI Sound Effect Asset Imports 
- */
+// Asset Imports
 import clickSfx from '$lib/audio/UISounds_018_click.wav';
 import wrongSfx from '$lib/audio/UISounds_021_wrong.wav';
 import correctSfx from '$lib/audio/UISounds_023_correct.wav';
 import countdownSfx from '$lib/audio/paoloargento-quiz-countdown-194417.mp3';
 
-/** 
- * Funk BGM Asset Imports (1-9)
- */
 import bgm1 from "$lib/audio/funk bgm/DavidKBD - Pink Bloom Pack - 01 - Pink Bloom.ogg";
 import bgm2 from "$lib/audio/funk bgm/DavidKBD - Pink Bloom Pack - 02 - Portal to Underworld.ogg";
 import bgm3 from "$lib/audio/funk bgm/DavidKBD - Pink Bloom Pack - 03 - To the Unknown.ogg";
@@ -21,217 +16,192 @@ import bgm7 from "$lib/audio/funk bgm/DavidKBD - Pink Bloom Pack - 07 - The Hidd
 import bgm8 from "$lib/audio/funk bgm/DavidKBD - Pink Bloom Pack - 08 - Lost Spaceship's Signal.ogg";
 import bgm9 from "$lib/audio/funk bgm/DavidKBD - Pink Bloom Pack - 09 - Lightyear City.ogg";
 
-const SFX_MAP = {
-    click: clickSfx,
-    wrong: wrongSfx,
-    correct: correctSfx,
-    countdown: countdownSfx
-};
-
 const BGM_LIST = [bgm1, bgm2, bgm3, bgm4, bgm5, bgm6, bgm7, bgm8, bgm9];
+const SFX_MAP = { click: clickSfx, wrong: wrongSfx, correct: correctSfx, countdown: countdownSfx };
+
+// --- AUDIO SETTINGS  ---
+const MASTER_VOLUME = 0.5;    // Global volume limit (0.0 to 1.0)
+const FADE_DURATION = 2000;   // Duration of fade-in/out in ms
+const CROSS_FADE_TIME = 3;    // Seconds skip before end to start cross-fade
+// ---------------------------------------------------
 
 /**
- * AudioManager handles all BGM transitions, SFX, and Autoplay policies.
- * Uses Svelte 5 runes for reactive mute state.
+ * Manage all game audio: BGM playlists, SFX, and fade effects.
  */
 class AudioManager {
-    private transitionToken = 0;
     private bgm: HTMLAudioElement | null = null;
     private currentBgmPath: string | null = null;
-    private homeBgmIndex: number | null = null;
+    private playlistIndex: number | null = null;
+    private transitionToken = 0;
     private hasUnlocked = false;
+    private crossFadeTriggered = false;
 
-    // Persist mute state across sessions
+    // Reactivity via Svelte 5 runes
     private _isMuted = $state(browser ? (localStorage.getItem('audio_muted') === 'true') : false);
-    private _volume = 1; // Application output always matches system level
+    private readonly volume = MASTER_VOLUME;
 
     get isMuted() { return this._isMuted; }
-    set isMuted(value: boolean) {
-        this._isMuted = value;
-        if (browser) localStorage.setItem('audio_muted', String(value));
-        if (this.bgm) this.bgm.muted = value;
+    set isMuted(v: boolean) {
+        this._isMuted = v;
+        if (browser) localStorage.setItem('audio_muted', String(v));
+        if (this.bgm) this.bgm.muted = v;
     }
 
-    get volume() { return this._volume; }
-
     /**
-     * Plays the shared Home screen BGM (persists across Home/Credits)
+     * Start/Resume the Home/Credit music.
+     * Picks a random starting song once, then cycles sequentially (1->2->...->9->1)
      */
     async playHomeBgm() {
         if (!browser) return;
-        if (this.homeBgmIndex === null) {
-            this.homeBgmIndex = Math.floor(Math.random() * BGM_LIST.length);
+        
+        // Don't restart if already playing a playlist track
+        if (this.bgm && this.currentBgmPath && BGM_LIST.includes(this.currentBgmPath) && !this.bgm.paused) return;
+
+        if (this.playlistIndex === null) {
+            this.playlistIndex = Math.floor(Math.random() * BGM_LIST.length);
         }
-        await this.playBgm(this.homeBgmIndex);
+
+        await this.playTrack(BGM_LIST[this.playlistIndex], true);
     }
 
     /**
-     * Specifically used for the Quiz gameplay countdown
+     * Transition to the Quiz gameplay countdown music.
      */
     async playQuizBgm() {
-        await this.playBgmCustom(SFX_MAP.countdown, true);
+        await this.playTrack(SFX_MAP.countdown, false);
     }
 
     /**
-     * Core BGM logic: Handles fade transitions and path checking
+     * Core playback engine. Handles fade transitions and playlist auto-advance.
      */
-    async playBgm(index?: number, loop: boolean = true) {
+    private async playTrack(path: string, isPlaylist: boolean) {
         if (!browser) return;
         const token = ++this.transitionToken;
-        const path = index !== undefined ? BGM_LIST[index] : BGM_LIST[Math.floor(Math.random() * BGM_LIST.length)];
-        
-        if (this.currentBgmPath === path && this.bgm) {
-            this.resumeBgm();
-            return;
+        const oldBgm = this.bgm;
+
+        // Reset cross-fade flag for new track
+        this.crossFadeTriggered = false;
+
+        // Smoothly fade out the OLD track if it's currently playing a different song
+        if (oldBgm && this.currentBgmPath !== path) {
+            this.fadeOutElement(oldBgm, FADE_DURATION, token);
         }
 
         if (token !== this.transitionToken) return;
 
-        if (this.bgm) await this.fadeOut(1000, token);
-
-        if (token !== this.transitionToken) return;
-
-        this.bgm = new Audio(path);
-        this.bgm.loop = loop;
-        this.bgm.volume = 0; // Prepare for fade in
-        this.bgm.muted = this.isMuted;
+        const audio = new Audio(path);
+        audio.loop = !isPlaylist;
+        audio.muted = this.isMuted;
+        audio.volume = 0; 
+        
+        this.bgm = audio;
         this.currentBgmPath = path;
-        
+
+        if (isPlaylist) {
+            // 1. End of track fallback
+            audio.onended = () => {
+                if (this.bgm !== audio) return;
+                if (this.crossFadeTriggered) return;
+                this.advancePlaylist();
+            };
+
+            // 2. Cross-fade trigger: start next song before this one ends
+            audio.ontimeupdate = () => {
+                if (this.bgm !== audio) return;
+                if (this.crossFadeTriggered) return;
+                if (audio.duration && audio.duration - audio.currentTime < CROSS_FADE_TIME) {
+                    this.crossFadeTriggered = true;
+                    this.advancePlaylist();
+                }
+            };
+        }
+
         this.attemptPlay();
     }
 
-    /**
-     * Internal BGM player for specific paths (non-library assets)
-     */
-    private async playBgmCustom(path: string, loop: boolean = true) {
-        const token = ++this.transitionToken;
-        if (!browser) return;
-        if (token !== this.transitionToken) return;
-        
-        if (this.bgm) await this.fadeOut(1000, token);
-
-        if (token !== this.transitionToken) return;
-
-        this.bgm = new Audio(path);
-        this.bgm.loop = loop;
-        this.bgm.volume = 0;
-        this.bgm.muted = this.isMuted;
-        this.attemptPlay();
+    private advancePlaylist() {
+        this.playlistIndex = (this.playlistIndex! + 1) % BGM_LIST.length;
+        this.playTrack(BGM_LIST[this.playlistIndex], true);
     }
 
-    /**
-     * Handles Autoplay blocks by falling back to muted playback
-     */
     private async attemptPlay() {
         if (!this.bgm) return;
         try {
             await this.bgm.play();
-            this.fadeIn(); // Fade in if site allows unmuted autoplay
+            this.fadeIn(FADE_DURATION);
         } catch {
-            // Muted fallback for restricted browsers (Safari/Chrome)
             if (this.bgm) {
                 this.bgm.muted = true;
-                this.bgm.volume = this.volume; 
+                this.bgm.volume = this.volume;
                 this.bgm.play().catch(() => {});
             }
         }
     }
 
-    private async resumeBgm() {
-        if (!this.bgm || !this.bgm.paused) return;
-        try {
-            await this.bgm.play();
-            this.fadeIn();
-        } catch {
-            this.attemptPlay();
+    async fadeIn(duration: number) {
+        const audio = this.bgm;
+        if (!audio) return;
+        const steps = 30, interval = duration / steps, stepVal = this.volume / steps;
+        audio.volume = 0;
+        for (let i = 0; i < steps; i++) {
+            await new Promise(r => setTimeout(r, interval));
+            if (this.bgm !== audio) return;
+            audio.volume = Math.min(this.volume, audio.volume + stepVal);
         }
     }
 
-    /**
-     * Volume transitions
-     */
-    async fadeIn(duration = 2000) {
-        const targetBgm = this.bgm;
-        if (!targetBgm) return;
-        const steps = 40;
-        const volStep = this.volume / steps;
-        targetBgm.volume = 0;
-
+    // New version that can target specific elements for cross-fading
+    async fadeOutElement(audio: HTMLAudioElement, duration: number, token?: number) {
+        if (!audio) return;
+        const steps = 20, interval = duration / steps, stepVal = audio.volume / steps;
         for (let i = 0; i < steps; i++) {
-            await new Promise(r => setTimeout(r, duration / steps));
-            if (this.bgm !== targetBgm) return;
-            targetBgm.volume = Math.min(this.volume, targetBgm.volume + volStep);
+            await new Promise(r => setTimeout(r, interval));
+            // Only stop if a NEW explicit transition happened (token check)
+            if (token && token !== this.transitionToken) break;
+            audio.volume = Math.max(0, audio.volume - stepVal);
         }
-    }
-
-    async fadeOut(duration = 1000, token?: number) {
-        if (token !== undefined && token !== this.transitionToken) return;
-        
-        const targetBgm = this.bgm;
-        if (!targetBgm) return;
-        const steps = 20;
-        const volStep = targetBgm.volume / steps;
-
-        for (let i = 0; i < steps; i++) {
-            await new Promise(r => setTimeout(r, duration / steps));
-            // Check if this transition is still valid
-            if (token !== undefined && token !== this.transitionToken) return;
-            if (this.bgm !== targetBgm) return;
-            targetBgm.volume = Math.max(0, targetBgm.volume - volStep);
-        }
-
-        if (this.bgm === targetBgm) {
-            targetBgm.pause();
+        audio.pause();
+        if (this.bgm === audio) {
             this.bgm = null;
             this.currentBgmPath = null;
         }
     }
 
-    /**
-     * Trigger a UI sound effect
-     */
+    // Kept for backward compatibility if needed elsewhere
+    async fadeOut(duration: number, token?: number) {
+        if (this.bgm) await this.fadeOutElement(this.bgm, duration, token);
+    }
+
     playSfx(type: keyof typeof SFX_MAP) {
         if (!browser) return;
         const sfx = new Audio(SFX_MAP[type]);
-        sfx.volume = this.volume;
         sfx.muted = this.isMuted;
         sfx.play().catch(() => {});
-        this.unlockAudio(); // Interaction detected, try to unmute BGM
+        this.unlockAudio();
     }
 
-    /**
-     * Unlocks audio context on first user interaction
-     */
     private unlockAudio() {
-        if (!this.bgm) return;
+        if (!this.bgm || this.hasUnlocked) return;
         if (!this.isMuted) this.bgm.muted = false;
-
         if (this.bgm.paused) {
-            this.bgm.play().then(() => {
-                this.hasUnlocked = true;
-                this.fadeIn();
-            }).catch(() => {});
-        } else if (!this.hasUnlocked) {
-            this.fadeIn();
+            this.bgm.play().then(() => (this.hasUnlocked = true)).catch(() => {});
+        } else {
             this.hasUnlocked = true;
         }
     }
 
-    /**
-     * Initialize global window listeners to unlock audio
-     */
     init() {
         if (!browser) return;
-        const handler = () => {
+        const unlock = () => {
             this.unlockAudio();
             if (this.hasUnlocked) {
                 ['click', 'keydown', 'touchstart'].forEach((e) => {
-                    window.removeEventListener(e, handler);
+                    window.removeEventListener(e, unlock);
                 });
             }
         };
         ['click', 'keydown', 'touchstart'].forEach((e) => {
-            window.addEventListener(e, handler);
+            window.addEventListener(e, unlock);
         });
     }
 
