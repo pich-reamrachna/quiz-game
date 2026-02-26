@@ -6,6 +6,7 @@
 	import { createGameEngine } from '$lib/game/engine';
 	import { QUESTIONS } from '$lib/questions';
 	import type { Question } from '$lib/types';
+	import { audioManager } from '$lib/audioManager.svelte';
 
 	const TOTAL_TIME = 5;
 	const engine = createGameEngine(QUESTIONS);
@@ -40,12 +41,19 @@
 	function choose(key: string) {
 		if (phase !== 'playing' || !currentQuestion) return;
 
+		audioManager.playSfx('click');
+
 		const chosen = currentQuestion.choices.find((c) => c.key === key);
 		const correct = chosen?.isCorrect ?? false;
 
 		selectedKey = key;
 		phase = 'feedback';
-		if (correct) score += 1;
+		if (correct) {
+			score += 1;
+			audioManager.playSfx('correct');
+		} else {
+			audioManager.playSfx('wrong');
+		}
 
 		// After the 900ms feedback delay, continue only if the game has not ended
 		pendingAdvance = setTimeout(() => {
@@ -94,6 +102,9 @@
 			goto('/');
 			return;
 		}
+
+		audioManager.playQuizBgm();
+		
 		engine.start(name, TOTAL_TIME);
 		engine.nextQuestion();
 		const state = engine.getState();
@@ -114,6 +125,7 @@
 			clearTimeout(pendingAdvance);
 		}
 		engine.stopTimer();
+		audioManager.fadeOut();
 	});
 </script>
 
