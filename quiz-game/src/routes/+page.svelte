@@ -18,7 +18,11 @@
 			error = 'Please enter your name!';
 			return;
 		}
-		goto(`/play?name=${encodeURIComponent(name.trim())}`);
+
+		// save the name to browser ram
+		sessionStorage.setItem('playerName', name.trim())
+
+		goto(`/play`);
 	}
 
 	function handleLeaderboard() {
