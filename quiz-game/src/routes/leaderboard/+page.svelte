@@ -45,7 +45,7 @@
 	}
 </script>
 <svelte:head>
-	<title>Leaderboard – 早押し日本語クイズ</title>
+	<title>Leaderboard</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link
 		href="https://fonts.googleapis.com/css2?family=Zen+Dots&family=Noto+Sans+JP:wght@400;700&display=swap"
@@ -65,7 +65,7 @@
 		<!-- Header -->
 		<div class="header">
 			<button class="leaderboard-back-btn" onclick={handleBack}>← Back</button>
-			<h1 class="leaderboard-title">Leaderboard</h1>
+			<h1 class="leaderboard-title">LEADERBOARD</h1>
 		</div>
 
 		<!-- Table area -->
