@@ -18,7 +18,10 @@
 	let timeLeft = $state(TOTAL_TIME);
 	let selectedKey = $state<string | null>(null);
 	let phase = $state<'playing' | 'feedback'>('playing');
-
+	let showPopup = $state(false);
+	let fwCanvas: HTMLCanvasElement | undefined = $state();
+	let fwCanvasInner: HTMLCanvasElement | undefined = $state();
+	let popupPhase = $state<'score' | 'full'>('score');
 	const progress = $derived((timeLeft / TOTAL_TIME) * 100);
 	const timerColor = $derived(timeLeft > 10 ? '#a060e0' : timeLeft > 5 ? '#f59e0b' : '#ef4444');
 
@@ -73,29 +76,94 @@
 		}, 900);
 	}
 
-	async function endGame() {
-		if (hasEnded) return; // prevent multiple calls to endGame()
-		hasEnded = true;
+	 
+async function endGame() {
+    if (hasEnded) return;
+    hasEnded = true;
 
-		if (pendingAdvance) {
-			clearTimeout(pendingAdvance);
-			pendingAdvance = null;
+    if (pendingAdvance) {
+        clearTimeout(pendingAdvance);
+        pendingAdvance = null;
+    }
+    engine.stopTimer();
+    showPopup = true;
+	popupPhase = 'score';
+	setTimeout(() => {
+		popupPhase = 'full';
+		startFireworks(fwCanvas, 50);
+		startFireworks(fwCanvasInner, 50);
+}, 2000);
+}
+async function submitAndLeave() {
+    try {
+        await fetch('/api/scores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playerName: name, score })
+        });
+    } catch (e) {
+        console.error('Failed to save score:', e);
+    }
+    goto('/leaderboard');
+}
+
+function startFireworks(canvas: HTMLCanvasElement | undefined, p0: number) {
+	if (!canvas) return;
+	const ctx = canvas.getContext('2d')!;
+	canvas.width = canvas.offsetWidth || window.innerWidth;
+	canvas.height = canvas.offsetHeight || window.innerHeight;
+
+		const colors = ['#ff6b6b', '#ffd93d', '#c97fff', '#4fc3f7', '#6bcb77'];
+		const dots: { x: number; y: number; vx: number; vy: number; alpha: number; color: string }[] = [];
+
+		function burst(x: number, y: number) {
+			const color = colors[Math.floor(Math.random() * colors.length)];
+			for (let i = 0; i < 40; i++) {
+				const angle = (Math.PI * 2 * i) / 40;
+				const speed = Math.random() * 3 + 1;
+				dots.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, alpha: 1, color });
+			}
 		}
 
-		engine.stopTimer();
+		let frame: number;
 
-		try {
-			await fetch('/api/scores', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ playerName: name, score })
-			});
-		} catch (e) {
-			console.error('Failed to save score:', e);
+		function draw() {
+			ctx.fillStyle = 'rgba(0,0,0,0.12)';
+			ctx.fillRect(0, 0, canvas!.width, canvas!.height);
+
+			for (let i = dots.length - 1; i >= 0; i--) {
+				const d = dots[i];
+				d.x += d.vx;
+				d.y += d.vy;
+				d.vy += 0.06;
+				d.alpha -= 0.018;
+				if (d.alpha <= 0) { dots.splice(i, 1); continue; }
+				ctx.beginPath();
+				ctx.arc(d.x, d.y, 3, 0, Math.PI * 2);
+				ctx.fillStyle = d.color;
+				ctx.globalAlpha = d.alpha;
+				ctx.fill();
+				ctx.globalAlpha = 1;
+			}
+			frame = requestAnimationFrame(draw);
 		}
-		goto('/leaderboard');
+
+		let count = 0;
+		const interval = setInterval(() => {
+			burst(
+				Math.random() * canvas.width * 0.8 + canvas.width * 0.1,
+				Math.random() * canvas.height * 0.4 + 50
+			);
+			count++;
+			if (count >= 6) clearInterval(interval);
+		}, 400);
+
+		draw();
+		setTimeout(() => {
+			cancelAnimationFrame(frame);
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+		}, 4000);
 	}
-
 	onMount(() => {
 
 		// retrieve the name from browser ram
@@ -145,7 +213,7 @@
 
 <div class="page">
 	<div class="bg-grid"></div>
-
+	<canvas bind:this={fwCanvas} class="fw-canvas-full"></canvas>
 	<main class="card">
 		<div class="top-bar">
 			<span class="q-num">
@@ -197,4 +265,22 @@
 
 		<p class="player-tag">👤 {name}</p>
 	</main>
+{#if showPopup}
+		<div class="popup-overlay">	
+			{#if popupPhase === 'score'}
+			<p class="score-reveal">{score} / {QUESTIONS.length}</p>
+		{:else}	
+			<div class="popup-card">
+			<canvas bind:this={fwCanvasInner} class="fw-canvas-inner"></canvas>
+				<h2 class="popup-title">ゲームオーバー!</h2>
+				<img src="/congrats.png" alt="congrats" class="popup-img" />
+				<p class="popup-msg">頑張れ,  練習を続けてください！！💪</p>
+				<button class="popup-btn" onclick={submitAndLeave}>
+					view leaderboard →
+				</button>
+			</div>
+		{/if}
+		</div>
+	{/if}
 </div>
+
