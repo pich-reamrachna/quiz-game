@@ -21,6 +21,8 @@
 		href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
 		rel="stylesheet"
 	/>
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
+
 </svelte:head>
 
 <div class="credit-page">
@@ -29,11 +31,55 @@
         <h1 class="credit-title">CREDITS</h1>
     
         <main class="credit-card">
-            <!-- Header -->
-            
+            <section class="credit-section">
+                <h2 class="credit-role">Start Screen</h2>
+                <p class="credit-members">Phann chanthariroza ロザさん</p>
+                <p class="credit-members">Pich Ream Rachna ラチナさん</p>
+            </section>
 
-            <!-- Table area -->
-            
+            <section class="credit-section">
+                <h2 class="credit-role">Play Screen</h2>
+                <p class="credit-members">Phann chanthariroza ロザさん</p>
+            </section>
+
+            <section class="credit-section">
+                <h2 class="credit-role">Leaderboard Screen</h2>
+                <p class="credit-members">Phann chanthariroza ロザさん</p>
+            </section>
+
+            <section class="credit-section">
+                <h2 class="credit-role">Credit Screen</h2>
+                <p class="credit-members">Pich Ream Rachna ラチナさん</p>
+            </section>
+
+            <section class="credit-section">
+                <h2 class="credit-role">Game Logic</h2>
+                <p class="credit-members">Nethphorn Tepbrathna ラタナさん</p>
+            </section>
+
+            <section class="credit-section">
+                <h2 class="credit-role">Database</h2>
+                <p class="credit-members">Sok Kimlay ソクさん</p>
+            </section>
+
+            <section class="credit-section">
+                <h2 class="credit-role">Music</h2>
+                <p class="credit-members">Nethphorn Tepbrathna ラタナさん</p>
+            </section>
+
+            <section class="credit-section">
+                <h2 class="credit-role">Bug Bounty</h2>
+                <p class="credit-members">Sok Kimlay ソクさん</p>
+                <p class="credit-members">Nethphorn Tepbrathna ラタナさん</p>
+                <p class="credit-members">Pich Ream Rachna ラチナさん</p>
+            </section>
+
+            <section class="credit-section">
+                <h2 class="credit-role">Reviewer</h2>
+                <p class="credit-members">Nethphorn Tepbrathna ラタナさん</p>
+                <p class="credit-members">Pich Ream Rachna ラチナさん</p>
+            </section>
+
         </main>
 
         <button class="credit-back-btn" onclick={handleBack}>← Back</button>

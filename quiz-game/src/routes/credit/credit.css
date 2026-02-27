@@ -2,6 +2,12 @@
 .credit-back-btn {
     font-family: 'Press Start 2P', cursive;
 }
+
+.credit-role,
+.credit-members {
+    margin: 0;
+}
+
 .credit-page {
 	min-height: 100svh;
 	display: grid;
@@ -35,12 +41,47 @@
     border: 1px solid rgba(180, 100, 255, 0.2);
     width: 100%;
     min-height: clamp(320px, 70vh, 700px);  /* responsive height */
+    max-height: clamp(320px, 70vh, 700px);
     padding: clamp(1rem, 2.5vw, 3rem) clamp(1rem, 4vw, 4rem); /* responsive padding */
     /* clamp: (minimum height, preferred height, maximum height) */
     backdrop-filter: blur(24px);
     box-shadow:
         0 0 80px rgba(140, 60, 255, 0.12),
         0 2px 0 rgba(255, 255, 255, 0.05) inset;
+    display: grid;
+    gap: clamp(1rem, 1vw, 1.8rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch; /* smoother momentum on iOS */
+}
+
+.credit-card::-webkit-scrollbar {
+  width: 10px;
+}
+
+.credit-section {
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    padding: clamp(0.75rem, 1.5vw, 1.2rem);
+    align-items: center;
+}
+
+.credit-role {
+    font-family: 'Press Start 2P', cursive;
+    color: #f3e7ff;
+    font-size: clamp(0.75rem, 1.6vw, 1rem);
+    margin-bottom: 0.7rem;
+}
+
+.credit-members {
+    color: #d6d2e6;
+    font-size: clamp(0.9rem, 2.2vw, 1.1rem);
+    line-height: 1.5;
+    margin: 0.2rem;
+    font-family:'DotGothic16', sans-serif;
 }
 
 
@@ -67,4 +108,10 @@
 	border-radius: 14px;    
 }
 
+@media (max-width: 640px) {
+    .credit-card {
+        min-height: clamp(300px, 68vh, 560px);
+        max-height: clamp(300px, 68vh, 560px);
+    }
+}
 
