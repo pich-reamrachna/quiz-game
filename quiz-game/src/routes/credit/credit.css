@@ -2,15 +2,19 @@
 .credit-back-btn {
     font-family: 'Press Start 2P', cursive;
 }
+
+.credit-role,
+.credit-members {
+    margin: 0;
+}
+
 .credit-page {
-	min-height: 100vh;
-	display: flex;
-    flex-direction: column;
-	align-items: center;
-	/* justify-content: center; */
+	min-height: 100svh;
+	display: grid;
+    place-items: center;
 	background: radial-gradient(ellipse at 50% 50%, #120820 0%, #07050f 70%);
-	position: relative;
 	overflow: hidden;
+    padding: 1rem;
 }
 
 .credit-bg-grid {
@@ -24,8 +28,8 @@
 }
 
 .credit-shell {
-  width: 90%;
-  max-width: 92%;
+  width: min(92%, 1200px);
+  margin-inline: auto;
   position: relative;
   z-index: 1;
 }
@@ -35,35 +39,78 @@
     z-index: 1;
     background: rgba(15, 8, 30, 0.75);
     border: 1px solid rgba(180, 100, 255, 0.2);
-    padding: 3rem 4rem;
     width: 100%;
-    min-height: 700px; 
+    min-height: clamp(320px, 70vh, 700px);  /* responsive height */
+    max-height: clamp(320px, 70vh, 700px);
+    padding: clamp(1rem, 2.5vw, 3rem) clamp(1rem, 4vw, 4rem); /* responsive padding */
+    /* clamp: (minimum height, preferred height, maximum height) */
     backdrop-filter: blur(24px);
     box-shadow:
         0 0 80px rgba(140, 60, 255, 0.12),
         0 2px 0 rgba(255, 255, 255, 0.05) inset;
+    display: grid;
+    gap: clamp(1rem, 1vw, 1.8rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    -webkit-overflow-scrolling: touch; /* smoother momentum on iOS */
+}
+
+.credit-card::-webkit-scrollbar {
+  width: 10px;
+}
+
+.credit-section {
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    padding: clamp(0.75rem, 1.5vw, 1.2rem);
+    align-items: center;
+}
+
+.credit-role {
+    font-family: 'Press Start 2P', cursive;
+    color: #f3e7ff;
+    font-size: clamp(0.75rem, 1.6vw, 1rem);
+    margin-bottom: 0.7rem;
+}
+
+.credit-members {
+    color: #d6d2e6;
+    font-size: clamp(0.9rem, 2.2vw, 1.1rem);
+    line-height: 1.5;
+    margin: 0.2rem;
+    font-family:'DotGothic16', sans-serif;
 }
 
 
 .credit-title {
     position: relative;
     color:beige;
-    font-size: 25px;
-    margin-bottom: 25px;
-    margin-top: 60px;
+    font-size: clamp(1rem, 3vw, 25px);
+    margin-bottom: clamp(1rem, 3vw, 25px);
+    margin-top: clamp(1rem, 5vw, 60px);
     text-align: center;
 }
 
 .credit-back-btn {
-    margin-top: 30px;
+    margin-top: 20px;
     display:block;
-    /* background-color: blue; */
     color: aliceblue;
-    width: 8%;
+    width: fit-content;
+    min-width: 120px;
+    padding: 0.6rem 1rem;
     margin-left:auto;
-    font-size: 15px;
+    font-size: clamp(0.65rem, 1.8vw, 15px);    
     cursor: pointer;
     border: 1px solid rgba(180, 100, 255, 0.18);
-		border-radius: 14px;
-    
+	border-radius: 14px;    
 }
+
+@media (max-width: 640px) {
+    .credit-card {
+        min-height: clamp(300px, 68vh, 560px);
+        max-height: clamp(300px, 68vh, 560px);
+    }
+}
+
