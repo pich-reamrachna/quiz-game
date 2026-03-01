@@ -8,7 +8,7 @@
 	import type { Question } from '$lib/types';
 	import { audioManager } from '$lib/audioManager.svelte';
 
-	const TOTAL_TIME = 5;
+	const TOTAL_TIME = 30;
 	const engine = createGameEngine(QUESTIONS);
 
 	let name = $state('')
