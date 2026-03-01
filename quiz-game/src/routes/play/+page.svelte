@@ -8,7 +8,7 @@
 	import type { Question } from '$lib/types';
 	import { audioManager } from '$lib/audioManager.svelte';
 
-	const TOTAL_TIME = 30;
+	const TOTAL_TIME = 5;
 	const engine = createGameEngine(QUESTIONS);
 
 	let name = $state('')
@@ -18,6 +18,11 @@
 	let timeLeft = $state(TOTAL_TIME);
 	let selectedKey = $state<string | null>(null);
 	let phase = $state<'playing' | 'feedback'>('playing');
+	let showPopup = $state(false);
+
+	let popupTimeout: ReturnType<typeof setTimeout> | null = null;
+	let pendingAdvance: ReturnType<typeof setTimeout> | null = null; // stores the ID of the 900ms feedback timeout
+	let hasEnded = false;
 
 	const progress = $derived((timeLeft / TOTAL_TIME) * 100);
 	const timerColor = $derived(timeLeft > 10 ? '#a060e0' : timeLeft > 5 ? '#f59e0b' : '#ef4444');
@@ -25,17 +30,10 @@
 	function startTimer() {
 		engine.startTimer(
 			TOTAL_TIME,
-			(secondsLeft) => {
-				timeLeft = secondsLeft;
-			},
-			() => {
-				void endGame();
-			}
-		);
+			(secondsLeft) => { timeLeft = secondsLeft; },
+				() => {void endGame(); }
+				);
 	}
-
-	let pendingAdvance: ReturnType<typeof setTimeout> | null = null; // stores the ID of the 900ms feedback timeout
-	let hasEnded = false;
 
 	function choose(key: string) {
 		if (phase !== 'playing' || !currentQuestion) return;
@@ -47,6 +45,7 @@
 
 		selectedKey = key;
 		phase = 'feedback';
+
 		if (correct) {
 			score += 1;
 			audioManager.playSfx('correct');
@@ -54,7 +53,6 @@
 			audioManager.playSfx('wrong');
 		}
 
-		// After the 900ms feedback delay, continue only if the game has not ended
 		pendingAdvance = setTimeout(() => {
 			if (hasEnded) return;
 
@@ -73,62 +71,62 @@
 		}, 900);
 	}
 
-	async function endGame() {
-		if (hasEnded) return; // prevent multiple calls to endGame()
-		hasEnded = true;
+	 
+	 async function endGame() {
+        if (hasEnded) return;
+        hasEnded = true;
 
-		if (pendingAdvance) {
-			clearTimeout(pendingAdvance);
-			pendingAdvance = null;
-		}
+        if (pendingAdvance) {
+            clearTimeout(pendingAdvance);
+            pendingAdvance = null;
+        }
 
-		engine.stopTimer();
+        engine.stopTimer();
 
-		try {
-			await fetch('/api/scores', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ playerName: name, score })
-			});
-		} catch (e) {
-			console.error('Failed to save score:', e);
-		}
-		goto('/leaderboard');
-	}
+        try {
+            await fetch('/api/scores', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ playerName: name, score })
+            });
+        } catch (e) {
+            console.error('Failed to save score:', e);
+        }
 
-	onMount(() => {
+        showPopup    = true;
+        popupTimeout = setTimeout(() => {
+            sessionStorage.setItem('lastScore', String(score));
+            goto('/leaderboard');
+        }, 2000);
+    }
 
-		// retrieve the name from browser ram
-		const storedName = sessionStorage.getItem('playerName')
+    onMount(() => {
+        const storedName = sessionStorage.getItem('playerName');
+        if (!storedName) { goto('/'); return; }
+        name = storedName;
 
-		if (!storedName) {
-			goto('/');
-			return;
-		}
-		name = storedName
+        audioManager.playQuizBgm();
 
+        engine.start(name, TOTAL_TIME);
+        engine.nextQuestion();
 
-		audioManager.playQuizBgm();
-		
-		engine.start(name, TOTAL_TIME);
-		engine.nextQuestion();
-		const state = engine.getState();
-		
-		if (state.status === 'finished' || !state.currentQuestion) {
-			void endGame();
-			return;
-		}
-		
-		currentQuestion = state.currentQuestion;
-		questionIndex = Math.max(0, state.questionCount - 1); // defensive: prevent negative index
-		score = 0;
-		startTimer();
-	});
+        const state = engine.getState();
+        if (state.status === 'finished' || !state.currentQuestion) {
+            void endGame();
+            return;
+        }
+
+        currentQuestion = state.currentQuestion;
+        questionIndex   = Math.max(0, state.questionCount - 1);
+        score           = 0;
+        startTimer();
+    });
 
 	onDestroy(() => {
 		if (pendingAdvance) {
-			clearTimeout(pendingAdvance);
-		}
+			clearTimeout(pendingAdvance); }
+		if (popupTimeout) {
+		clearTimeout(popupTimeout);}
 		engine.stopTimer();
 		audioManager.fadeOut(1000);
 	});
@@ -145,7 +143,6 @@
 
 <div class="page">
 	<div class="bg-grid"></div>
-
 	<main class="card">
 		<div class="top-bar">
 			<span class="q-num">
@@ -197,4 +194,10 @@
 
 		<p class="player-tag">👤 {name}</p>
 	</main>
+{#if showPopup}
+		<div class="popup-overlay">	
+			<p class="score-reveal">Time's Up!</p>
+		</div>
+	{/if}
 </div>
+

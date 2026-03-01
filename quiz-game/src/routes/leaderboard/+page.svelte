@@ -9,7 +9,25 @@
 	let entries = $state<ScoreRow[]>([]);
 	let status  = $state<'loading' | 'error' | 'empty' | 'ok'>('loading');
 
+	let showResult  = $state(false);
+    let resultScore = $state(0);
+    let resultName  = $state('');
+
 	onMount(async () => {
+        // Check if coming from play screen with a score in sessionStorage.
+		const storedScore = sessionStorage.getItem('lastScore');
+		const storedName = sessionStorage.getItem('playerName')?.trim() ?? '';
+		resultName = storedName;
+
+		if (storedScore !== null) {
+			const parsedScore = Number(storedScore);
+			if (Number.isFinite(parsedScore) && parsedScore >= 0) {
+				resultScore = parsedScore;
+    			showResult = true;
+			}
+			// One-time popup trigger; do not keep showing on refreshes.
+			sessionStorage.removeItem('lastScore');
+		}
 		// Ensure home BGM is playing/continues
 		audioManager.playHomeBgm();
 
@@ -44,6 +62,7 @@
 		return String(rank);
 	}
 </script>
+
 <svelte:head>
 	<title>Leaderboard</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -115,4 +134,19 @@
 
 		<button class="btn-play" onclick={handleBack}>▶ Play Again</button>
 	</main>
+	<!-- Result popup — only shows when coming from play screen -->
+    {#if showResult}
+        <div class="popup-overlay">
+            <div class="popup-card">
+
+                <button class="close-btn" onclick={() => showResult = false}>✕</button>
+
+                <h2 class="popup-title">ゲームオーバー!</h2>
+                <p class="popup-score">{resultScore}</p>
+				<p class="popup-msg">プレイヤー {resultName}</p>
+                <p class="popup-msg">頑張れ！練習を続けてください！</p>
+
+            </div>
+        </div>
+    {/if}
 </div>
