@@ -8,7 +8,7 @@
 	import type { Question } from '$lib/types';
 	import { audioManager } from '$lib/audioManager.svelte';
 
-	const TOTAL_TIME = 30;
+	const TOTAL_TIME = 5;
 	const engine = createGameEngine(QUESTIONS);
 
 	let name = $state('')
@@ -95,7 +95,8 @@
 
         showPopup    = true;
         popupTimeout = setTimeout(() => {
-            goto(`/leaderboard?score=${score}&name=${encodeURIComponent(name)}`);
+            sessionStorage.setItem('lastScore', String(score));
+            goto('/leaderboard');
         }, 2000);
     }
 
@@ -195,7 +196,7 @@
 	</main>
 {#if showPopup}
 		<div class="popup-overlay">	
-			<p class="score-reveal">{score} / Time's Up!</p>
+			<p class="score-reveal">Time's Up!</p>
 		</div>
 	{/if}
 </div>
