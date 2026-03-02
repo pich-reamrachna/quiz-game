@@ -1,133 +1,193 @@
 <script lang="ts">
 	import './quiz.css';
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
-	import { onMount, onDestroy } from 'svelte';
-	import { createGameEngine } from '$lib/game/engine';
-	import { QUESTIONS } from '$lib/questions';
-	import type { Question } from '$lib/types';
+	import { onDestroy, onMount } from 'svelte';
+	import type { ChoiceKey } from '$lib/types';
 	import { audioManager } from '$lib/audioManager.svelte';
 
 	const TOTAL_TIME = 30;
-	const engine = createGameEngine(QUESTIONS);
 
-	let name = $state('')
-	let currentQuestion = $state<Question | null>(null);
+	type PublicQuestion = {
+		id: string;
+		promptEn: string;
+		choices: Array<{ key: ChoiceKey; text: string }>;
+	};
+
+	let name = $state('');
+	let sessionId = $state('');
+	let currentQuestion = $state<PublicQuestion | null>(null);
 	let questionIndex = $state(0);
 	let score = $state(0);
 	let timeLeft = $state(TOTAL_TIME);
-	let selectedKey = $state<string | null>(null);
+	let selectedKey = $state<ChoiceKey | null>(null);
+	let correctKey = $state<ChoiceKey | null>(null);
 	let phase = $state<'playing' | 'feedback'>('playing');
 	let showPopup = $state(false);
 
 	let popupTimeout: ReturnType<typeof setTimeout> | null = null;
-	let pendingAdvance: ReturnType<typeof setTimeout> | null = null; // stores the ID of the 900ms feedback timeout
+	let pendingAdvance: ReturnType<typeof setTimeout> | null = null;
+	let timerInterval: ReturnType<typeof setInterval> | null = null;
 	let hasEnded = false;
 
 	const progress = $derived((timeLeft / TOTAL_TIME) * 100);
 	const timerColor = $derived(timeLeft > 10 ? '#a060e0' : timeLeft > 5 ? '#f59e0b' : '#ef4444');
 
 	function startTimer() {
-		engine.startTimer(
-			TOTAL_TIME,
-			(secondsLeft) => { timeLeft = secondsLeft; },
-				() => {void endGame(); }
-				);
+		timeLeft = TOTAL_TIME;
+		stopTimer();
+		timerInterval = setInterval(() => {
+			if (hasEnded) return;
+			timeLeft -= 1;
+			if (timeLeft <= 0) {
+				timeLeft = 0;
+				stopTimer();
+				void endGame();
+			}
+		}, 1000);
 	}
 
-	function choose(key: string) {
+	function stopTimer() {
+		if (!timerInterval) return;
+		clearInterval(timerInterval);
+		timerInterval = null;
+	}
+
+	async function choose(key: ChoiceKey) {
 		if (phase !== 'playing' || !currentQuestion) return;
 
 		audioManager.playSfx('click');
-
-		const chosen = currentQuestion.choices.find((c) => c.key === key);
-		const correct = chosen?.isCorrect ?? false;
-
 		selectedKey = key;
 		phase = 'feedback';
 
-		if (correct) {
-			score += 1;
-			audioManager.playSfx('correct');
-		} else {
-			audioManager.playSfx('wrong');
-		}
+		try {
+			const res = await fetch('/api/game/answer', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ sessionId, choiceKey: key })
+			});
+			if (!res.ok) throw new Error('Failed to submit answer');
+			const result = await res.json();
 
-		pendingAdvance = setTimeout(() => {
-			if (hasEnded) return;
-
-			engine.nextQuestion();
-			const state = engine.getState();
-
-			// When we answer the last question (no more question)
-			if (state.status === 'finished' || !state.currentQuestion) {
-				void endGame();
+			correctKey = result.correctKey ?? null;
+			score = Number(result.score ?? score);
+			if (result.correct) {
+				audioManager.playSfx('correct');
 			} else {
-				currentQuestion = state.currentQuestion;
-				questionIndex = Math.max(0, state.questionCount - 1);
-				selectedKey = null;
-				phase = 'playing';
+				audioManager.playSfx('wrong');
 			}
-		}, 900);
+
+			pendingAdvance = setTimeout(() => {
+				if (hasEnded) return;
+				if (result.finished) {
+					void endGame();
+					return;
+				}
+				currentQuestion = result.question ?? null;
+				questionIndex = Number(result.questionIndex ?? questionIndex + 1);
+				selectedKey = null;
+				correctKey = null;
+				phase = 'playing';
+			}, 900);
+		} catch (error) {
+			console.error(error);
+			audioManager.playSfx('wrong');
+			selectedKey = null;
+			phase = 'playing';
+		}
 	}
 
-	 
-	 async function endGame() {
-        if (hasEnded) return;
-        hasEnded = true;
+	async function endGame() {
+		if (hasEnded) return;
+		hasEnded = true;
 
-        if (pendingAdvance) {
-            clearTimeout(pendingAdvance);
-            pendingAdvance = null;
-        }
+		if (pendingAdvance) {
+			clearTimeout(pendingAdvance);
+			pendingAdvance = null;
+		}
+		stopTimer();
 
-        engine.stopTimer();
+		try {
+			if (sessionId) {
+				const res = await fetch('/api/game/finish', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ sessionId })
+				});
+				if (res.ok) {
+					const result = await res.json();
+					if (typeof result.score === 'number') {
+						score = result.score;
+					}
+				}
+			}
+		} catch (e) {
+			console.error('Failed to finish game:', e);
+		}
 
-        try {
-            await fetch('/api/scores', {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ playerName: name, score })
-            });
-        } catch (e) {
-            console.error('Failed to save score:', e);
-        }
+		showPopup = true;
+		popupTimeout = setTimeout(() => {
+			sessionStorage.setItem('lastScore', String(score));
+			goto('/leaderboard');
+		}, 2000);
+	}
 
-        showPopup    = true;
-        popupTimeout = setTimeout(() => {
-            sessionStorage.setItem('lastScore', String(score));
-            goto('/leaderboard');
-        }, 2000);
-    }
+	onMount(async () => {
+		const storedName = sessionStorage.getItem('playerName')?.trim();
+		if (!storedName) {
+			goto('/');
+			return;
+		}
+		name = storedName;
+		audioManager.playQuizBgm();
 
-    onMount(() => {
-        const storedName = sessionStorage.getItem('playerName');
-        if (!storedName) { goto('/'); return; }
-        name = storedName;
+		try {
+			const bootstrapRaw = sessionStorage.getItem('gameBootstrap');
+			if (bootstrapRaw) {
+				sessionStorage.removeItem('gameBootstrap');
+				const bootstrap = JSON.parse(bootstrapRaw) as {
+					sessionId?: string;
+					question?: PublicQuestion | null;
+					score?: number;
+				};
 
-        audioManager.playQuizBgm();
+				if (bootstrap.sessionId && bootstrap.question) {
+					sessionId = bootstrap.sessionId;
+					currentQuestion = bootstrap.question;
+					questionIndex = 1;
+					score = Number(bootstrap.score ?? 0);
+					startTimer();
+					return;
+				}
+			}
 
-        engine.start(name, TOTAL_TIME);
-        engine.nextQuestion();
+			const res = await fetch('/api/game/start', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ playerName: name })
+			});
+			if (!res.ok) throw new Error('Failed to start game');
+			const result = await res.json();
 
-        const state = engine.getState();
-        if (state.status === 'finished' || !state.currentQuestion) {
-            void endGame();
-            return;
-        }
+			sessionId = result.sessionId;
+			currentQuestion = result.question ?? null;
+			questionIndex = currentQuestion ? 1 : 0;
+			score = Number(result.score ?? 0);
 
-        currentQuestion = state.currentQuestion;
-        questionIndex   = Math.max(0, state.questionCount - 1);
-        score           = 0;
-        startTimer();
-    });
+			if (!currentQuestion || !sessionId) {
+				void endGame();
+				return;
+			}
+			startTimer();
+		} catch (error) {
+			console.error(error);
+			goto('/');
+		}
+	});
 
 	onDestroy(() => {
-		if (pendingAdvance) {
-			clearTimeout(pendingAdvance); }
-		if (popupTimeout) {
-		clearTimeout(popupTimeout);}
-		engine.stopTimer();
+		if (pendingAdvance) clearTimeout(pendingAdvance);
+		if (popupTimeout) clearTimeout(popupTimeout);
+		stopTimer();
 		audioManager.fadeOut(1000);
 	});
 </script>
@@ -145,9 +205,7 @@
 	<div class="bg-grid"></div>
 	<main class="card">
 		<div class="top-bar">
-			<span class="q-num">
-				Q&nbsp;{questionIndex + 1}
-			</span>
+			<span class="q-num">Q&nbsp;{questionIndex}</span>
 
 			<span class="score-badge">✓ {score}</span>
 
@@ -158,10 +216,7 @@
 		</div>
 
 		<div class="timer-bar-track">
-			<div
-				class="timer-bar-fill"
-				style="width: {progress}%; background: {timerColor}"
-			></div>
+			<div class="timer-bar-fill" style="width: {progress}%; background: {timerColor}"></div>
 		</div>
 
 		{#if currentQuestion}
@@ -174,17 +229,17 @@
 				{#each currentQuestion.choices as choice}
 					<button
 						class="choice-btn"
-						class:correct={phase === 'feedback' && choice.isCorrect}
-						class:wrong={phase === 'feedback' && selectedKey === choice.key && !choice.isCorrect}
-						class:dim={phase === 'feedback' && !choice.isCorrect && selectedKey !== choice.key}
+						class:correct={phase === 'feedback' && correctKey === choice.key}
+						class:wrong={phase === 'feedback' && correctKey !== null && selectedKey === choice.key && correctKey !== choice.key}
+						class:dim={phase === 'feedback' && correctKey !== null && correctKey !== choice.key && selectedKey !== choice.key}
 						disabled={phase === 'feedback'}
 						onclick={() => choose(choice.key)}
 					>
 						<span class="choice-label">{choice.key}</span>
 						<span class="choice-text">{choice.text}</span>
-						{#if phase === 'feedback' && choice.isCorrect}
+						{#if phase === 'feedback' && correctKey !== null && correctKey === choice.key}
 							<span class="choice-icon">✓</span>
-						{:else if phase === 'feedback' && selectedKey === choice.key && !choice.isCorrect}
+						{:else if phase === 'feedback' && correctKey !== null && selectedKey === choice.key && correctKey !== choice.key}
 							<span class="choice-icon">✗</span>
 						{/if}
 					</button>
@@ -194,10 +249,9 @@
 
 		<p class="player-tag">👤 {name}</p>
 	</main>
-{#if showPopup}
-		<div class="popup-overlay">	
+	{#if showPopup}
+		<div class="popup-overlay">
 			<p class="score-reveal">Time's Up!</p>
 		</div>
 	{/if}
 </div>
-

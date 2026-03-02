@@ -6,23 +6,42 @@
 
 	let name = $state('');
 	let error = $state('');
+	let isStarting = $state(false);
 
 	onMount(() => {
 		// Play BGM on mount. If blocked, it will play on first click.
 		audioManager.playHomeBgm();
 	});
 
-	function handleStart() {
+	async function handleStart() {
+		if (isStarting) return;
 		audioManager.playSfx('click');
 		if (!name.trim()) {
 			error = 'Please enter your name!';
 			return;
 		}
 
-		// save the name to browser ram
-		sessionStorage.setItem('playerName', name.trim())
+		const playerName = name.trim();
+		error = '';
+		isStarting = true;
 
-		goto(`/play`);
+		try {
+			sessionStorage.setItem('playerName', playerName);
+			const res = await fetch('/api/game/start', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ playerName })
+			});
+			if (res.ok) {
+				const bootstrap = await res.json();
+				sessionStorage.setItem('gameBootstrap', JSON.stringify(bootstrap));
+			}
+			goto('/play');
+		} catch {
+			error = 'Failed to start game. Please try again.';
+		} finally {
+			isStarting = false;
+		}
 	}
 
 	function handleLeaderboard() {
@@ -84,7 +103,7 @@
 			<button class="pixel-btn" onclick={handleLeaderboard}>
 				<img src="/Scoreboard.png" alt="Scoreboard" />
 			</button>
-			<button class="pixel-btn" onclick={handleStart}>
+			<button class="pixel-btn" onclick={handleStart} disabled={isStarting} aria-busy={isStarting}>
 				<img src="/play-button.png" alt="Play" />
 			</button>
 			<!-- Temporary Button -->

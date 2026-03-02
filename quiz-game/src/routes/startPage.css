@@ -164,6 +164,11 @@ input:focus {
 	
 .pixel-btn:hover { transform: translateY(-4px) scale(1.05); }
 .pixel-btn:active { transform: scale(0.95); }
+.pixel-btn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+	transform: none;
+}
 	
 .pixel-btn img {
 	width: 150px;
