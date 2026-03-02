@@ -5,9 +5,11 @@
 	import { onMount } from 'svelte';
 	import type { ScoreRow } from '$lib/types';
 	import { audioManager } from '$lib/audioManager.svelte';
+	import { page } from '$app/state';
 
 	let entries = $state<ScoreRow[]>([]);
 	let status  = $state<'loading' | 'error' | 'empty' | 'ok'>('loading');
+	let showPlayAgain = $derived(page.url.searchParams.has('played')); // check for query of "played=true" in leaderboard url
 
 	onMount(async () => {
 		// Ensure home BGM is playing/continues
@@ -112,7 +114,8 @@
 				</table>
 			{/if}
 		</div>
-
+		{#if showPlayAgain}
 		<button class="btn-play" onclick={handleBack}>▶ Play Again</button>
+		{/if}
 	</main>
 </div>

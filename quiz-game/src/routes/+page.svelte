@@ -8,6 +8,12 @@
 	let error = $state('');
 
 	onMount(() => {
+		// find a saved name before
+		const savedName = sessionStorage.getItem('playerName')
+		if (savedName) {
+			name = savedName;
+		}
+		
 		// Play BGM on mount. If blocked, it will play on first click.
 		audioManager.playHomeBgm();
 	});

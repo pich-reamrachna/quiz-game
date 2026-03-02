@@ -93,7 +93,7 @@
 		} catch (e) {
 			console.error('Failed to save score:', e);
 		}
-		goto('/leaderboard');
+		goto('/leaderboard?played=true'); // "played" query to toggle on the playAgain button
 	}
 
 	onMount(() => {
