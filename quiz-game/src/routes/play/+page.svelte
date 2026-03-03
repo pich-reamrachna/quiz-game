@@ -11,7 +11,7 @@
 	const TOTAL_TIME = 30;
 	const engine = createGameEngine(QUESTIONS);
 
-	let name = $state('')
+	let name = $state('');
 	let currentQuestion = $state<Question | null>(null);
 	let questionIndex = $state(0);
 	let score = $state(0);
@@ -20,8 +20,11 @@
 	let phase = $state<'playing' | 'feedback'>('playing');
 	let showPopup = $state(false);
 
+	let sessionId = $state<string | null>(null);
+	let isInitializing = $state(true);
+
 	let popupTimeout: ReturnType<typeof setTimeout> | null = null;
-	let pendingAdvance: ReturnType<typeof setTimeout> | null = null; // stores the ID of the 900ms feedback timeout
+	let pendingAdvance: ReturnType<typeof setTimeout> | null = null;
 	let hasEnded = false;
 
 	const progress = $derived((timeLeft / TOTAL_TIME) * 100);
@@ -30,27 +33,77 @@
 	function startTimer() {
 		engine.startTimer(
 			TOTAL_TIME,
-			(secondsLeft) => { timeLeft = secondsLeft; },
-				() => {void endGame(); }
-				);
+			(secondsLeft) => {
+				timeLeft = secondsLeft;
+			},
+			() => {
+				void endGame();
+			}
+		);
 	}
 
-	function choose(key: string) {
-		if (phase !== 'playing' || !currentQuestion) return;
+	let initError = $state<string | null>(null);
+
+	async function startSession() {
+		try {
+			const res = await fetch('/api/game/start', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ playerName: name })
+			});
+			
+			if (!res.ok) {
+				const errorData = await res.json();
+				throw new Error(errorData.error || `Server responded with ${res.status}`);
+			}
+
+			const data = await res.json();
+			if (data.sessionId) {
+				sessionId = data.sessionId;
+				isInitializing = false;
+				startTimer();
+			} else {
+				throw new Error('No sessionId received');
+			}
+		} catch (e: any) {
+			console.error('Session error:', e);
+			initError = e.message || 'Unknown error';
+			goto('/');
+		}
+	}
+
+	async function choose(key: string) {
+		if (phase !== 'playing' || !currentQuestion || !sessionId) return;
 
 		audioManager.playSfx('click');
 
 		const chosen = currentQuestion.choices.find((c) => c.key === key);
-		const correct = chosen?.isCorrect ?? false;
+		if (!chosen) return;
 
 		selectedKey = key;
 		phase = 'feedback';
 
-		if (correct) {
-			score += 1;
-			audioManager.playSfx('correct');
-		} else {
-			audioManager.playSfx('wrong');
+		try {
+			const res = await fetch('/api/game/answer', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					sessionId, 
+					questionId: currentQuestion.id, 
+					answerText: chosen.text,
+					currentIdx: questionIndex
+				})
+			});
+			const data = await res.json();
+			
+			if (data.correct) {
+				score = data.score;
+				audioManager.playSfx('correct');
+			} else {
+				audioManager.playSfx('wrong');
+			}
+		} catch (e) {
+			console.error('Answer submission failed:', e);
 		}
 
 		pendingAdvance = setTimeout(() => {
@@ -83,14 +136,16 @@
 
         engine.stopTimer();
 
-        try {
-            await fetch('/api/scores', {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ playerName: name, score })
-            });
-        } catch (e) {
-            console.error('Failed to save score:', e);
+        if (sessionId) {
+            try {
+                await fetch('/api/game/finish', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ sessionId })
+                });
+            } catch (e) {
+                console.error('Failed to finish game:', e);
+            }
         }
 
         showPopup    = true;
@@ -100,9 +155,12 @@
         }, 2000);
     }
 
-    onMount(() => {
+    onMount(async () => {
         const storedName = sessionStorage.getItem('playerName');
-        if (!storedName) { goto('/'); return; }
+        if (!storedName) { 
+            goto('/'); 
+            return; 
+        }
         name = storedName;
 
         audioManager.playQuizBgm();
@@ -119,7 +177,8 @@
         currentQuestion = state.currentQuestion;
         questionIndex   = Math.max(0, state.questionCount - 1);
         score           = 0;
-        startTimer();
+
+		await startSession();
     });
 
 	onDestroy(() => {
@@ -143,7 +202,12 @@
 
 <div class="page">
 	<div class="bg-grid"></div>
-	<main class="card">
+	{#if isInitializing}
+		<div class="loading-screen">
+			<p>Initializing Game Session...</p>
+		</div>
+	{:else}
+		<main class="card">
 		<div class="top-bar">
 			<span class="q-num">
 				Q&nbsp;{questionIndex + 1}
@@ -199,5 +263,6 @@
 			<p class="score-reveal">Time's Up!</p>
 		</div>
 	{/if}
+{/if}
 </div>
 
