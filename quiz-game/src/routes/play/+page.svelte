@@ -71,59 +71,6 @@
 		}, 900);
 	}
 
-<<<<<<< fix/#70-#71/play-again-btn-and-persistent-name
-	async function endGame() {
-		if (hasEnded) return; // prevent multiple calls to endGame()
-		hasEnded = true;
-
-		if (pendingAdvance) {
-			clearTimeout(pendingAdvance);
-			pendingAdvance = null;
-		}
-
-		engine.stopTimer();
-
-		try {
-			await fetch('/api/scores', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ playerName: name, score })
-			});
-		} catch (e) {
-			console.error('Failed to save score:', e);
-		}
-		goto('/leaderboard?played=true'); // "played" query to toggle on the playAgain button
-	}
-
-	onMount(() => {
-
-		// retrieve the name from browser ram
-		const storedName = sessionStorage.getItem('playerName')
-
-		if (!storedName) {
-			goto('/');
-			return;
-		}
-		name = storedName
-
-
-		audioManager.playQuizBgm();
-		
-		engine.start(name, TOTAL_TIME);
-		engine.nextQuestion();
-		const state = engine.getState();
-		
-		if (state.status === 'finished' || !state.currentQuestion) {
-			void endGame();
-			return;
-		}
-		
-		currentQuestion = state.currentQuestion;
-		questionIndex = Math.max(0, state.questionCount - 1); // defensive: prevent negative index
-		score = 0;
-		startTimer();
-	});
-=======
 	 
 	 async function endGame() {
         if (hasEnded) return;
@@ -174,7 +121,6 @@
         score           = 0;
         startTimer();
     });
->>>>>>> main
 
 	onDestroy(() => {
 		if (pendingAdvance) {
