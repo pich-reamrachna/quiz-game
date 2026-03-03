@@ -1,7 +1,7 @@
 import { db } from "$lib/server/db";
 import { json } from '@sveltejs/kit'
 import type { GameState } from "$lib/types";
-import { QUESTIONS } from "$lib/server/questions.server";
+// import { QUESTIONS } from "$lib/server/questions.server";
 
 const MAX_SCORE = QUESTIONS.length;
 

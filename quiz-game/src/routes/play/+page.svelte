@@ -4,7 +4,7 @@
 	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
 	import { createGameEngine } from '$lib/game/engine';
-	import { QUESTIONS } from '$lib/server/questions.server';
+	// import { QUESTIONS } from '$lib/server/questions.server';
 	import type { Question } from '$lib/types';
 	import { audioManager } from '$lib/audioManager.svelte';
 
