@@ -49,6 +49,11 @@
 		goto('/');
 	}
 
+	function handlePlayAgain() {
+		audioManager.playSfx('click');
+		goto('/play');
+	}
+
 	function formatDate(iso: string) {
 		return new Date(iso).toLocaleDateString('ja-JP', {
 			year:  'numeric',
@@ -134,7 +139,7 @@
 			{/if}
 		</div>
 		{#if showPlayAgain}
-		<button class="btn-play" onclick={handleBack}>▶ Play Again</button>
+		<button class="btn-play" onclick={handlePlayAgain}>▶ Play Again</button>
 		{/if}
 	</main>
 	<!-- Result popup — only shows when coming from play screen -->
