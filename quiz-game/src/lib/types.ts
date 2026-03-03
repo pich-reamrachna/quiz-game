@@ -53,3 +53,22 @@ export type ScoreRow = {
     score: number;
     created_at: string;
 };
+
+// ===============================
+// Public Choice
+// ===============================
+
+export type PublicChoice = {
+  key: ChoiceKey;
+  text: string;
+};
+
+// ===============================
+// Public Question
+// ===============================
+
+export type PublicQuestion = {
+  id: string;
+  promptEn: string;
+  choices: PublicChoice[];
+};
