@@ -2,7 +2,6 @@
 	import './quiz.css';
 	import { goto } from '$app/navigation';
 	import { onMount, onDestroy } from 'svelte';
-	// import { QUESTIONS } from '$lib/server/questions.server';
 	import type { PublicQuestion, StartGameResponse, AnswerGameResponse, FinishGameResponse } from '$lib/types';
 	import { audioManager } from '$lib/audioManager.svelte';
 
