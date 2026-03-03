@@ -111,3 +111,36 @@ export type FinishGameSessionResult =
   | { status: "not_found" }
   | { status: "already_finished"; score: number; timeLeftMs: number }
   | { status: "finished"; score: number; timeLeftMs: number };
+
+
+export type StartGameResponse = {
+  sessionStarted: true;
+  sessionId: string;
+  timeLeftMs: number;
+  questionIndex: number;
+  score: number;
+  question: PublicQuestion;
+};
+
+export type AnswerGameResponse =
+  | {
+      finished: false;
+      correct: boolean;
+      score: number;
+      questionIndex: number;
+      question: PublicQuestion;
+      timeLeftMs: number;
+    }
+  | {
+      finished: true;
+      correct: boolean;
+      score: number;
+      timeLeftMs: number;
+    };
+
+export type FinishGameResponse = {
+  finished: true;
+  score: number;
+  timeLeftMs: number;
+  alreadyFinished?: boolean;
+};
