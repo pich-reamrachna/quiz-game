@@ -223,3 +223,28 @@
 		color: #4a3a6a;
 		letter-spacing: 0.05em;
 	}
+
+.popup-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
+}
+.score-reveal {
+    font-family: 'Zen Dots', cursive;
+    font-size: 3rem;
+    color: #a600ff;
+    text-shadow:
+        0 0 40px rgba(157, 0, 255, 0.8),
+        0 0 80px rgba(157, 0, 255, 0.8);
+    animation: zoom-pulse 1s ease-in-out infinite;
+}
+
+@keyframes zoom-pulse {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.2); }
+}

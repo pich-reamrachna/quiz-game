@@ -1,6 +1,9 @@
 import { db } from "$lib/server/db";
 import { json } from '@sveltejs/kit'
 import type { GameState } from "$lib/types";
+import { QUESTIONS } from "$lib/questions";
+
+const MAX_SCORE = QUESTIONS.length;
 
 export async function POST ({request}) {
   try {
@@ -20,8 +23,8 @@ export async function POST ({request}) {
     }
 
     // check if score is an integer, and positive number
-    if (!Number.isInteger(score) || score <  0) {
-      return json({error: 'Score must be a zero or a positive integer'}, {status: 400})
+    if (!Number.isInteger(score) || score <  0 || score > MAX_SCORE) {
+      return json({error: `Score must be between 0 and ${MAX_SCORE}`}, {status: 400});
     }
 
     // insert into DB
