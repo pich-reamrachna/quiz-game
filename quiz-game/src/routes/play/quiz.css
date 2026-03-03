@@ -248,3 +248,23 @@
     0%, 100% { transform: scale(1); }
     50%       { transform: scale(1.2); }
 }
+.countdown-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 997;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.countdown-text {
+    font-family: 'Zen Dots', cursive;
+    font-size: 10rem;
+    color: #ffd700;
+    text-shadow:
+        0 0 40px rgba(255, 215, 0, 0.8),
+        0 0 80px rgba(255, 215, 0, 0.4);
+    animation: zoom-pulse 0.8s ease-in-out;
+}

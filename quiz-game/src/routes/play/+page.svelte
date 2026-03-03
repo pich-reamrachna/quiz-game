@@ -19,21 +19,59 @@
 	let selectedKey = $state<string | null>(null);
 	let phase = $state<'playing' | 'feedback'>('playing');
 	let showPopup = $state(false);
+	let countdown = $state<number | 'Go!' | null>(3);
 
+	let countInterval:   ReturnType<typeof setInterval> | null = null;
 	let popupTimeout: ReturnType<typeof setTimeout> | null = null;
 	let pendingAdvance: ReturnType<typeof setTimeout> | null = null; // stores the ID of the 900ms feedback timeout
 	let hasEnded = false;
 
 	const progress = $derived((timeLeft / TOTAL_TIME) * 100);
 	const timerColor = $derived(timeLeft > 10 ? '#a060e0' : timeLeft > 5 ? '#f59e0b' : '#ef4444');
-
+	
 	function startTimer() {
-		engine.startTimer(
-			TOTAL_TIME,
-			(secondsLeft) => { timeLeft = secondsLeft; },
-				() => {void endGame(); }
-				);
-	}
+        engine.startTimer(
+            TOTAL_TIME,
+            (secondsLeft) => { timeLeft = secondsLeft; },
+            () => { void endGame(); }
+        );
+    }
+
+	function startCountdown() {
+        let count = 3;
+        countdown  = 3;
+
+        countInterval = setInterval(() => {
+            count--;
+
+            if (count > 0) {
+                countdown = count;
+
+            } else if (count === 0) {
+                countdown = 'Go!';
+
+            } else {
+                clearInterval(countInterval!);
+                countInterval = null;
+                countdown     = null;
+
+                // Load question only after countdown finishes
+                engine.nextQuestion();
+                const state = engine.getState();
+
+                if (state.status === 'finished' || !state.currentQuestion) {
+                    void endGame();
+                    return;
+                }
+
+                currentQuestion = state.currentQuestion;
+                questionIndex   = Math.max(0, state.questionCount - 1);
+                score           = 0;
+                startTimer();
+            }
+        }, 1000);
+    }
+
 
 	function choose(key: string) {
 		if (phase !== 'playing' || !currentQuestion) return;
@@ -108,21 +146,14 @@
         audioManager.playQuizBgm();
 
         engine.start(name, TOTAL_TIME);
-        engine.nextQuestion();
 
-        const state = engine.getState();
-        if (state.status === 'finished' || !state.currentQuestion) {
-            void endGame();
-            return;
-        }
-
-        currentQuestion = state.currentQuestion;
-        questionIndex   = Math.max(0, state.questionCount - 1);
-        score           = 0;
-        startTimer();
+		startCountdown();
+        
     });
 
 	onDestroy(() => {
+		if (countInterval)   
+			clearInterval(countInterval);
 		if (pendingAdvance) {
 			clearTimeout(pendingAdvance); }
 		if (popupTimeout) {
@@ -177,7 +208,7 @@
 						class:correct={phase === 'feedback' && choice.isCorrect}
 						class:wrong={phase === 'feedback' && selectedKey === choice.key && !choice.isCorrect}
 						class:dim={phase === 'feedback' && !choice.isCorrect && selectedKey !== choice.key}
-						disabled={phase === 'feedback'}
+						disabled={phase === 'feedback' || countdown !== null}
 						onclick={() => choose(choice.key)}
 					>
 						<span class="choice-label">{choice.key}</span>
@@ -194,7 +225,14 @@
 
 		<p class="player-tag">👤 {name}</p>
 	</main>
-{#if showPopup}
+	{#if countdown !== null}
+        <div class="countdown-overlay">
+            {#key countdown}
+                <p class="countdown-text">{countdown}</p>
+            {/key}
+    	</div>
+    {/if}
+	{#if showPopup}
 		<div class="popup-overlay">	
 			<p class="score-reveal">Time's Up!</p>
 		</div>
