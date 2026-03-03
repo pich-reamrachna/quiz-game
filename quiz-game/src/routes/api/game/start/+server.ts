@@ -4,7 +4,13 @@ import crypto from 'node:crypto';
 
 export async function POST({ request }) {
   try {
-    const { playerName } = await request.json();
+    let payload;
+    try {
+      payload = await request.json();
+    } catch (e) {
+      return json({ error: 'Malformed JSON payload' }, { status: 400 });
+    }
+    const { playerName } = payload;
 
     if (!playerName || typeof playerName !== 'string' || playerName.trim().length < 1 || playerName.trim().length > 20) {
       return json({ error: "Name must be between 1 and 20 characters." }, { status: 400 });

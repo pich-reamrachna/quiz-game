@@ -4,7 +4,13 @@ import { QUESTIONS } from '$lib/questions';
 
 export async function POST({ request }) {
     try {
-        const { sessionId, questionId, answerText, currentIdx } = await request.json();
+        let payload;
+        try {
+            payload = await request.json();
+        } catch (e) {
+            return json({ error: 'Malformed JSON payload' }, { status: 400 });
+        }
+        const { sessionId, questionId, answerText, currentIdx } = payload;
 
         // 1. Fetch session
         const sessionResult = await db.execute({
@@ -33,20 +39,24 @@ export async function POST({ request }) {
         }
 
         // 4. Validate Answer
-        const question = QUESTIONS.find(q => q.id === questionId);
-        if (!question) {
-            return json({ error: 'Invalid question ID' }, { status: 400 });
+        const expectedQuestion = QUESTIONS[Number(session.current_question_index)];
+        if (!expectedQuestion || expectedQuestion.id !== questionId) {
+            return json({ error: 'Question sequence mismatch' }, { status: 400 });
         }
 
-        const choice = question.choices.find(c => c.text === answerText);
+        const choice = expectedQuestion.choices.find(c => c.text === answerText);
         const isCorrect = choice?.isCorrect ?? false;
         const newScore = isCorrect ? Number(session.score) + 1 : Number(session.score);
 
         // 5. Update session
-        await db.execute({
-            sql: 'UPDATE game_sessions SET score = ?, current_question_index = ? WHERE id = ?',
-            args: [newScore, currentIdx + 1, sessionId]
+        const updateResult = await db.execute({
+            sql: 'UPDATE game_sessions SET score = ?, current_question_index = ? WHERE id = ? AND current_question_index = ? AND status = ?',
+            args: [newScore, currentIdx + 1, sessionId, currentIdx, 'active']
         });
+
+        if (updateResult.rowsAffected === 0) {
+            return json({ error: 'Session state conflict or expired' }, { status: 409 });
+        }
 
         return json({ correct: isCorrect, score: newScore });
 

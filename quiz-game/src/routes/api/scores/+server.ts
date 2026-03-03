@@ -2,7 +2,7 @@ import { db } from "$lib/server/db";
 import { json } from '@sveltejs/kit'
 
 export async function POST () {
-  return json({ error: "NoNoNo" }, { status: 403 });
+  return json({ error: "Direct score submission is disabled. Use /api/game/finish." }, { status: 403 });
 }
 
 export async function GET ({url}) {

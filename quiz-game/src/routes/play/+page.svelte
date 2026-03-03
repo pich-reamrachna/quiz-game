@@ -124,7 +124,8 @@
 		}, 900);
 	}
 
-	 
+	 let finishError = $state<string | null>(null);
+
 	 async function endGame() {
         if (hasEnded) return;
         hasEnded = true;
@@ -138,13 +139,21 @@
 
         if (sessionId) {
             try {
-                await fetch('/api/game/finish', {
-                    method:  'POST',
+                const res = await fetch('/api/game/finish', {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body:    JSON.stringify({ sessionId })
+                    body: JSON.stringify({ sessionId })
                 });
-            } catch (e) {
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || `Server error: ${res.status}`);
+                }
+            } catch (e: any) {
                 console.error('Failed to finish game:', e);
+                finishError = e.message || 'Network error';
+                hasEnded = false; // Allow retry if possible, or at least don't state we're done
+                return;
             }
         }
 
@@ -261,6 +270,17 @@
 {#if showPopup}
 		<div class="popup-overlay">	
 			<p class="score-reveal">Time's Up!</p>
+		</div>
+	{/if}
+
+	{#if finishError}
+		<div class="popup-overlay error-overlay">
+			<div class="error-msg">
+				<p>Failed to save score: {finishError}</p>
+				<button class="retry-btn" onclick={() => { finishError = null; endGame(); }}>
+					Retry Submission
+				</button>
+			</div>
 		</div>
 	{/if}
 {/if}
