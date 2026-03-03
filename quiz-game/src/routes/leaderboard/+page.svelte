@@ -15,6 +15,8 @@
     let resultScore = $state(0);
     let resultName  = $state('');
 
+	let fwCanvasFull:  HTMLCanvasElement | undefined = $state();
+	
 	onMount(async () => {
         // Check if coming from play screen with a score in sessionStorage.
 		const storedScore = sessionStorage.getItem('lastScore');
@@ -26,6 +28,9 @@
 			if (Number.isFinite(parsedScore) && parsedScore >= 0) {
 				resultScore = parsedScore;
     			showResult = true;
+					setTimeout(() => {
+						startFireworks(fwCanvasFull,  false);
+                }, 50);
 			}
 			// One-time popup trigger; do not keep showing on refreshes.
 			sessionStorage.removeItem('lastScore');
@@ -43,6 +48,101 @@
 			status = 'error';
 		}
 	});
+
+	function startFireworks(canvas: HTMLCanvasElement | undefined, isInner: boolean) {
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        canvas.width  = isInner ? canvas.offsetWidth  : window.innerWidth;
+        canvas.height = isInner ? canvas.offsetHeight : window.innerHeight;
+
+        const safeCtx    = ctx;
+        const safeCanvas = canvas;
+
+        const colors = ['#ff6b6b', '#ffd93d', '#c97fff', '#4fc3f7', '#6bcb77', '#ff9f43', '#ff6eb4'];
+
+        const dots: {
+            x: number; y: number;
+            vx: number; vy: number;
+            alpha: number; color: string;
+            isConfetti: boolean; rotation: number;
+        }[] = [];
+
+        function burst(x: number, y: number) {
+            for (let i = 0; i < 50; i++) {
+                const angle = (Math.PI * 2 * i) / 50;
+                const speed = Math.random() * 4 + 1;
+                dots.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed + (Math.random() - 0.5) * 2,
+                    vy: Math.sin(angle) * speed - Math.random() * 3,
+                    alpha: 1,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    isConfetti: i % 3 === 0,
+                    rotation: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        let frame: number;
+
+        function draw() {
+            safeCtx.fillStyle = 'rgba(0,0,0,0.12)';
+            safeCtx.fillRect(0, 0, safeCanvas.width, safeCanvas.height);
+
+            for (let i = dots.length - 1; i >= 0; i--) {
+                const d = dots[i];
+                d.x        += d.vx;
+                d.y        += d.vy;
+                d.vy       += 0.06;
+                d.alpha    -= 0.016;
+                d.rotation += 0.08;
+
+                if (d.alpha <= 0) { dots.splice(i, 1); continue; }
+
+                safeCtx.globalAlpha = d.alpha;
+
+                if (d.isConfetti) {
+                    // Rectangle confetti piece
+                    safeCtx.save();
+                    safeCtx.translate(d.x, d.y);
+                    safeCtx.rotate(d.rotation);
+                    safeCtx.fillStyle = d.color;
+                    safeCtx.fillRect(-5, -2, 10, 5);
+                    safeCtx.restore();
+                } else {
+                    // Circle particle
+                    safeCtx.beginPath();
+                    safeCtx.arc(d.x, d.y, 3, 0, Math.PI * 2);
+                    safeCtx.fillStyle = d.color;
+                    safeCtx.fill();
+                }
+
+                safeCtx.globalAlpha = 1;
+            }
+
+            frame = requestAnimationFrame(draw);
+        }
+
+        let count = 0;
+        const interval = setInterval(() => {
+            burst(
+                Math.random() * safeCanvas.width  * 0.8 + safeCanvas.width  * 0.1,
+                Math.random() * safeCanvas.height * 0.4 + 50
+            );
+            count++;
+            if (count >= 10) clearInterval(interval);
+        }, 400);
+
+        draw();
+
+        setTimeout(() => {
+            cancelAnimationFrame(frame);
+            safeCtx.clearRect(0, 0, safeCanvas.width, safeCanvas.height);
+        }, 6000);
+    }
+
 
 	function handleBack() {
 		audioManager.playSfx('click');
@@ -68,6 +168,7 @@
 		if (rank === 3) return '🥉';
 		return String(rank);
 	}
+
 </script>
 
 <svelte:head>
@@ -144,9 +245,10 @@
 	</main>
 	<!-- Result popup — only shows when coming from play screen -->
     {#if showResult}
+	<canvas bind:this={fwCanvasFull} class="fw-canvas-full"></canvas>
         <div class="popup-overlay">
             <div class="popup-card">
-
+			
                 <button class="close-btn" onclick={() => showResult = false}>✕</button>
 
                 <h2 class="popup-title">ゲームオーバー!</h2>
