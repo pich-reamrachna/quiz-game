@@ -58,12 +58,11 @@
 
 			if (count > 0) {
 				countdown = count;
-				if (count === 2 && !startPromise) {
-                	startPromise = startGame();
-				}
             } else if (count === 0) {
                 countdown = 'Go!';
-
+				if (!startPromise) {
+                	startPromise = startGame();
+				}
             } else {
                 clearInterval(countInterval!);
                 countInterval = null;
