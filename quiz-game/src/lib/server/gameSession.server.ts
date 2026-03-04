@@ -211,5 +211,7 @@ export async function finishGameSession(sessionId: string): Promise<FinishGameSe
     }
 
     await finalizeSession(session.id, session.score);
-    return { status: 'finished', score: session.score, timeLeftMs: 0 };
+    const latest = await getSession(session.id);
+    if (!latest) return { status: 'not_found' };
+    return { status: 'finished', score: latest.score, timeLeftMs: 0 };
 }
