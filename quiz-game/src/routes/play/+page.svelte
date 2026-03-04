@@ -101,6 +101,7 @@
 		void (async () => {
 			try {
 				const res = await submitAnswer(currentQuestionId, key);
+				if (hasEnded) return;
 				lastAnswerCorrect = res.correct;
 				score = res.score;
 				timeLeft = Math.ceil(res.timeLeftMs / 1000);
@@ -117,6 +118,7 @@
 				}
 
 				pendingAdvance = setTimeout(() => {
+					if (hasEnded) return;
 					currentQuestion = res.question;
 					questionIndex = res.questionIndex;
 					lastAnswerCorrect = null;
@@ -126,7 +128,7 @@
 
 			} catch (e) {
 				console.error('Failed to submit answer:', e);
-				await endGame();
+				if (!hasEnded) await endGame();
 			}
 		})();
 	}

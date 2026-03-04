@@ -26,10 +26,11 @@ function buildChoiceOrderMap(): ChoiceOrderMap {
     return map;
 }
 
-function publicQuestionFromState(questionId: string, map: ChoiceOrderMap): PublicQuestion {
+function publicQuestionFromState(questionId: string, map: ChoiceOrderMap): PublicQuestion | null {
     const base = QUESTIONS.find((q) => q.id === questionId);
-    if (!base) throw new Error(`Question not found: ${questionId}`);
-    const reordered: Question = { ...base, choices: map[questionId] };
+    const choices = map[questionId];
+    if (!base || !choices || choices.length !== 3) return null;
+    const reordered: Question = { ...base, choices };
     return toPublicQuestion(reordered);
 }
 
@@ -52,31 +53,38 @@ async function getSession(sessionId: string): Promise<GameSessionRow | null> {
 }
 
 async function finalizeSession(sessionId: string, finalScore: number): Promise<void> {
-    await db.execute({
-        sql: `
-            UPDATE game_sessions
-            SET status = 'finished',
-                finished_at = CURRENT_TIMESTAMP,
-                score = ?
-            WHERE id = ? AND status = 'playing'
-        `,
-        args: [finalScore, sessionId]
-    });
+    const tx = await db.transaction();
+    try {
+        const updateResult = await tx.execute({
+            sql: `
+                UPDATE game_sessions
+                SET status = 'finished',
+                    finished_at = CURRENT_TIMESTAMP,
+                    score = ?,
+                    score_saved = 1
+                WHERE id = ? AND status = 'playing' AND score_saved = 0
+            `,
+            args: [finalScore, sessionId]
+        });
 
-    await db.execute({
-        sql: `
-            INSERT INTO scores (name, score, created_at)
-            SELECT player_name, ?, CURRENT_TIMESTAMP
-            FROM game_sessions
-            WHERE id = ? AND score_saved = 0
-        `,
-        args: [finalScore, sessionId]
-    });
-
-    await db.execute({
-        sql: 'UPDATE game_sessions SET score_saved = 1 WHERE id = ?',
-        args: [sessionId]
-    });
+        if (updateResult.rowsAffected === 1) {
+            await tx.execute({
+                sql: `
+                    INSERT INTO scores (name, score, created_at)
+                    SELECT player_name, ?, CURRENT_TIMESTAMP
+                    FROM game_sessions
+                    WHERE id = ?
+                `,
+                args: [finalScore, sessionId]
+            });
+            await tx.commit();
+        } else {
+            await tx.rollback();
+        }
+    } catch (e) {
+        await tx.rollback();
+        throw e;
+    }
 }
 
 export async function createGameSession(playerName: string) {
@@ -149,28 +157,37 @@ export async function submitGameAnswer(
     const nextQuestionId = questionOrder[nextIndex];
 
     if (!nextQuestionId || isExpired(session.expires_at)) {
-        await db.execute({
+        const updateResult = await db.execute({
             sql: `
                 UPDATE game_sessions
-                SET score = ?, question_index = ?, status = 'finished', finished_at = CURRENT_TIMESTAMP
-                WHERE id = ? AND status = 'playing'
+                SET score = ?, question_index = ?
+                WHERE id = ? AND status = 'playing' AND question_index = ?
             `,
-            args: [newScore, nextIndex, session.id]
+            args: [newScore, nextIndex, session.id, currentIndex]
         });
+
+        if (updateResult.rowsAffected === 0) {
+            return { status: 'invalid_sequence' };
+        }
         await finalizeSession(session.id, newScore);
         return { status: 'finished', correct, score: newScore, timeLeftMs: 0 };
     }
 
-    await db.execute({
+    const updateResult = await db.execute({
         sql: `
             UPDATE game_sessions
             SET score = ?, question_index = ?
-            WHERE id = ? AND status = 'playing'
+            WHERE id = ? AND status = 'playing' AND question_index = ?
         `,
-        args: [newScore, nextIndex, session.id]
+        args: [newScore, nextIndex, session.id, currentIndex]
     });
 
+    if (updateResult.rowsAffected === 0) {
+        return { status: 'invalid_sequence' };
+    }
+
     const question = publicQuestionFromState(nextQuestionId, choiceOrderMap);
+    if (!question) return { status: 'invalid_session_data' };
     return {
         status: 'continue',
         correct,
