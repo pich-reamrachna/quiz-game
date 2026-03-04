@@ -58,11 +58,11 @@
 
 			if (count > 0) {
 				countdown = count;
-            } else if (count === 0) {
-                countdown = 'Go!';
-				if (!startPromise) {
+				if (count === 2 && !startPromise) {
                 	startPromise = startGame();
 				}
+            } else if (count === 0) {
+                countdown = 'Go!';
             } else {
                 clearInterval(countInterval!);
                 countInterval = null;
@@ -76,7 +76,7 @@
 						currentQuestion = data.question;
 						questionIndex = data.questionIndex;
 						score = data.score;
-						timeLeft = Math.ceil(data.timeLeftMs / 1000);
+						timeLeft = Math.min(TOTAL_TIME, Math.ceil(data.timeLeftMs / 1000));
 						startTimer();
 					} catch (e) {
 						console.error('Failed to start game:', e);
@@ -103,7 +103,8 @@
 				if (hasEnded) return;
 				lastAnswerCorrect = res.correct;
 				score = res.score;
-				timeLeft = Math.ceil(res.timeLeftMs / 1000);
+				// Don't update timeLeft here to prevent jumping. 
+				// The local timer handles the display, while the server enforces the limit.
 
 				if (res.correct) {
 				audioManager.playSfx('correct');
