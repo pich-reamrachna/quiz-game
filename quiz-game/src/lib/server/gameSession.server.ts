@@ -91,7 +91,8 @@ export async function createGameSession(playerName: string) {
     const sessionId = crypto.randomUUID();
     const questionOrder = shuffleArray(QUESTIONS.map((q) => q.id));
     const choiceOrderMap = buildChoiceOrderMap();
-    const expiresAt = new Date(Date.now() + GAME_DURATION_MS).toISOString();
+    const GRACE_PERIOD_MS = 5000; // Account for 3s countdown + network lag
+    const expiresAt = new Date(Date.now() + GAME_DURATION_MS + GRACE_PERIOD_MS).toISOString();
 
     await db.execute({
         sql: `
@@ -106,7 +107,7 @@ export async function createGameSession(playerName: string) {
 
     return {
         sessionId,
-        timeLeftMs: GAME_DURATION_MS,
+        timeLeftMs: getTimeLeftMs(expiresAt),
         questionIndex: 0,
         score: 0,
         question: publicQuestionFromState(questionOrder[0], choiceOrderMap)
