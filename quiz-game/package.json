@@ -13,7 +13,8 @@
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run",
 		"lint": "prettier --check . && eslint .",
-		"format": "prettier --write ."
+		"format": "prettier --write .",
+		"migrate": "node --env-file=.env scripts/migrate.mjs"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.2",

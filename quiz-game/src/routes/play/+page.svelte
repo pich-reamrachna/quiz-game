@@ -1,18 +1,14 @@
 <script lang="ts">
 	import './quiz.css';
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
-	import { createGameEngine } from '$lib/game/engine';
-	import { QUESTIONS } from '$lib/questions';
-	import type { Question } from '$lib/types';
+	import type { PublicQuestion, StartGameResponse, AnswerGameResponse, FinishGameResponse } from '$lib/types';
 	import { audioManager } from '$lib/audioManager.svelte';
 
 	const TOTAL_TIME = 30;
-	const engine = createGameEngine(QUESTIONS);
 
 	let name = $state('')
-	let currentQuestion = $state<Question | null>(null);
+	let currentQuestion = $state<PublicQuestion | null>(null);
 	let questionIndex = $state(0);
 	let score = $state(0);
 	let timeLeft = $state(TOTAL_TIME);
@@ -26,16 +22,32 @@
 	let pendingAdvance: ReturnType<typeof setTimeout> | null = null; // stores the ID of the 900ms feedback timeout
 	let hasEnded = false;
 
+	let gameTimerInterval: ReturnType<typeof setInterval> | null = null;
+	let lastAnswerCorrect = $state<boolean | null>(null);
+	let startPromise: Promise<StartGameResponse> | null = null;
+
+
 	const progress = $derived((timeLeft / TOTAL_TIME) * 100);
 	const timerColor = $derived(timeLeft > 10 ? '#a060e0' : timeLeft > 5 ? '#f59e0b' : '#ef4444');
 	
 	function startTimer() {
-        engine.startTimer(
-            TOTAL_TIME,
-            (secondsLeft) => { timeLeft = secondsLeft; },
-            () => { void endGame(); }
-        );
-    }
+		if (gameTimerInterval) {
+			clearInterval(gameTimerInterval);
+			gameTimerInterval = null;
+		}
+
+		gameTimerInterval = setInterval(() => {
+			timeLeft -= 1;
+			if (timeLeft <= 0) {
+				timeLeft = 0;
+				if (gameTimerInterval) {
+					clearInterval(gameTimerInterval);
+					gameTimerInterval = null;
+				}
+			void endGame();
+			}
+		}, 1000);
+	}
 
 	function startCountdown() {
         let count = 3;
@@ -44,9 +56,11 @@
         countInterval = setInterval(() => {
             count--;
 
-            if (count > 0) {
-                countdown = count;
-
+			if (count > 0) {
+				countdown = count;
+				if (count === 2 && !startPromise) {
+                	startPromise = startGame();
+				}
             } else if (count === 0) {
                 countdown = 'Go!';
 
@@ -55,19 +69,21 @@
                 countInterval = null;
                 countdown     = null;
 
-                // Load question only after countdown finishes
-                engine.nextQuestion();
-                const state = engine.getState();
-
-                if (state.status === 'finished' || !state.currentQuestion) {
-                    void endGame();
-                    return;
-                }
-
-                currentQuestion = state.currentQuestion;
-                questionIndex   = Math.max(0, state.questionCount - 1);
-                score           = 0;
-                startTimer();
+                // Start authoritative game session and load first question
+				void (async () => {
+					try {
+						const data = await (startPromise ?? startGame());
+						startPromise = null;
+						currentQuestion = data.question;
+						questionIndex = data.questionIndex;
+						score = data.score;
+						timeLeft = Math.ceil(data.timeLeftMs / 1000);
+						startTimer();
+					} catch (e) {
+						console.error('Failed to start game:', e);
+						goto('/');
+					}
+				})();
             }
         }, 1000);
     }
@@ -77,40 +93,48 @@
 		if (phase !== 'playing' || !currentQuestion) return;
 
 		audioManager.playSfx('click');
-
-		const chosen = currentQuestion.choices.find((c) => c.key === key);
-		const correct = chosen?.isCorrect ?? false;
-
 		selectedKey = key;
 		phase = 'feedback';
 
-		if (correct) {
-			score += 1;
-			audioManager.playSfx('correct');
-		} else {
-			audioManager.playSfx('wrong');
-		}
+		const currentQuestionId = currentQuestion.id;
 
-		pendingAdvance = setTimeout(() => {
-			if (hasEnded) return;
+		void (async () => {
+			try {
+				const res = await submitAnswer(currentQuestionId, key);
+				if (hasEnded) return;
+				lastAnswerCorrect = res.correct;
+				score = res.score;
+				timeLeft = Math.ceil(res.timeLeftMs / 1000);
 
-			engine.nextQuestion();
-			const state = engine.getState();
+				if (res.correct) {
+				audioManager.playSfx('correct');
+				} else {
+				audioManager.playSfx('wrong');
+				}
 
-			// When we answer the last question (no more question)
-			if (state.status === 'finished' || !state.currentQuestion) {
-				void endGame();
-			} else {
-				currentQuestion = state.currentQuestion;
-				questionIndex = Math.max(0, state.questionCount - 1);
-				selectedKey = null;
-				phase = 'playing';
+				if (res.finished) {
+				await endGame();
+				return;
+				}
+
+				pendingAdvance = setTimeout(() => {
+					if (hasEnded) return;
+					currentQuestion = res.question;
+					questionIndex = res.questionIndex;
+					lastAnswerCorrect = null;
+					selectedKey = null;
+					phase = 'playing';
+				}, 800);
+
+			} catch (e) {
+				console.error('Failed to submit answer:', e);
+				if (!hasEnded) await endGame();
 			}
-		}, 900);
+		})();
 	}
 
 	 
-	 async function endGame() {
+	async function endGame() {
         if (hasEnded) return;
         hasEnded = true;
 
@@ -119,16 +143,19 @@
             pendingAdvance = null;
         }
 
-        engine.stopTimer();
+        if (gameTimerInterval) {
+			clearInterval(gameTimerInterval);
+			gameTimerInterval = null;
+		}
 
         try {
-            await fetch('/api/scores', {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ playerName: name, score })
-            });
+            const finishRes = await finishGameApi();
+			if (finishRes) {
+				score = finishRes.score;
+				timeLeft = Math.ceil(finishRes.timeLeftMs / 1000);
+			}
         } catch (e) {
-            console.error('Failed to save score:', e);
+            console.error('Failed to finish game session:', e);
         }
 
         showPopup    = true;
@@ -138,6 +165,49 @@
         }, 2000);
     }
 
+	// Start Game
+	async function startGame(): Promise<StartGameResponse> {
+		const res = await fetch('/api/game/start', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ playerName: name })
+		});
+
+		if (!res.ok) {
+			throw new Error('Failed to start game');
+		}
+
+		return (await res.json()) as StartGameResponse;
+	}
+
+	// Submit answer
+	async function submitAnswer(questionId: string, choiceKey: string): Promise<AnswerGameResponse> {
+		const res = await fetch('/api/game/answer', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ questionId, choiceKey })
+		});
+
+		if (!res.ok) {
+			throw new Error('Failed to submit answer');
+		}
+
+		return (await res.json()) as AnswerGameResponse;
+	}
+
+	// Finish Game
+	async function finishGameApi(): Promise<FinishGameResponse | null> {
+		const res = await fetch('/api/game/finish', {
+			method: 'POST'
+		});
+
+		if (!res.ok) {
+			return null;
+		}
+
+		return (await res.json()) as FinishGameResponse;
+	}
+
     onMount(() => {
         const storedName = sessionStorage.getItem('playerName');
         if (!storedName) { goto('/'); return; }
@@ -145,20 +215,25 @@
 
         audioManager.playQuizBgm();
 
-        engine.start(name, TOTAL_TIME);
-
 		startCountdown();
         
     });
 
 	onDestroy(() => {
-		if (countInterval)   
-			clearInterval(countInterval);
-		if (pendingAdvance) {
-			clearTimeout(pendingAdvance); }
-		if (popupTimeout) {
-		clearTimeout(popupTimeout);}
-		engine.stopTimer();
+		startPromise = null;
+
+		if (!hasEnded) {
+			void finishGameApi();
+		}
+
+		if (countInterval) clearInterval(countInterval);
+		if (pendingAdvance) clearTimeout(pendingAdvance); 
+		if (popupTimeout) clearTimeout(popupTimeout);
+		
+		if (gameTimerInterval) {
+			clearInterval(gameTimerInterval);
+			gameTimerInterval = null;
+		}
 		audioManager.fadeOut(1000);
 	});
 </script>
@@ -205,17 +280,17 @@
 				{#each currentQuestion.choices as choice}
 					<button
 						class="choice-btn"
-						class:correct={phase === 'feedback' && choice.isCorrect}
-						class:wrong={phase === 'feedback' && selectedKey === choice.key && !choice.isCorrect}
-						class:dim={phase === 'feedback' && !choice.isCorrect && selectedKey !== choice.key}
+						class:correct={phase === 'feedback' && selectedKey === choice.key && lastAnswerCorrect === true}
+						class:wrong={phase === 'feedback' && selectedKey === choice.key && lastAnswerCorrect === false}
+						class:dim={phase === 'feedback' && selectedKey !== choice.key}
 						disabled={phase === 'feedback' || countdown !== null}
 						onclick={() => choose(choice.key)}
 					>
 						<span class="choice-label">{choice.key}</span>
 						<span class="choice-text">{choice.text}</span>
-						{#if phase === 'feedback' && choice.isCorrect}
+						{#if phase === 'feedback' && selectedKey === choice.key && lastAnswerCorrect === true}
 							<span class="choice-icon">✓</span>
-						{:else if phase === 'feedback' && selectedKey === choice.key && !choice.isCorrect}
+						{:else if phase === 'feedback' && selectedKey === choice.key && lastAnswerCorrect === false}
 							<span class="choice-icon">✗</span>
 						{/if}
 					</button>

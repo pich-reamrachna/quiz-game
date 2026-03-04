@@ -1,47 +1,5 @@
 import { db } from "$lib/server/db";
 import { json } from '@sveltejs/kit'
-import type { GameState } from "$lib/types";
-import { QUESTIONS } from "$lib/questions";
-
-const MAX_SCORE = QUESTIONS.length;
-
-export async function POST ({request}) {
-  try {
-    // send GameState data to server
-    let body: GameState 
-    try {
-      body = await request.json();
-      } catch {
-        return json({ error: "Invalid JSON body" }, { status: 400 });
-      }
-
-    const { playerName, score} = body
-
-    // check if playerName exist, if its a string, and is between 1-20 character
-    if (!playerName || typeof playerName !== 'string' || playerName.trim().length < 1 || playerName.trim().length > 20) {
-      return json ({error: "Name must be between 1 and 20 characters."}, {status: 400})
-    }
-
-    // check if score is an integer, and positive number
-    if (!Number.isInteger(score) || score <  0 || score > MAX_SCORE) {
-      return json({error: `Score must be between 0 and ${MAX_SCORE}`}, {status: 400});
-    }
-
-    // insert into DB
-    await db.execute({
-      sql: 'INSERT INTO scores (name, score, created_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
-      args: [playerName.trim(), score]
-    })
-
-    // return success
-    return json({message: 'Score saved!'}, {status:201} )
-  
-  // catch error
-  } catch(error) {
-      console.error(error)
-      return json({error: 'Failed to save score!'}, {status:500})
-  }
-}
 
 export async function GET ({url}) {
   try {
