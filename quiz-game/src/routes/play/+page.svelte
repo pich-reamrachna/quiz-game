@@ -1,183 +1,184 @@
 <script lang="ts">
-	import './quiz.css';
-	import { goto } from '$app/navigation';
-	import { onMount, onDestroy } from 'svelte';
-	import type { PublicQuestion, StartGameResponse, AnswerGameResponse, FinishGameResponse } from '$lib/types';
-	import { audioManager } from '$lib/audioManager.svelte';
+	import './quiz.css'
+	import { goto } from '$app/navigation'
+	import { onMount, onDestroy } from 'svelte'
+	import type {
+		PublicQuestion,
+		StartGameResponse,
+		AnswerGameResponse,
+		FinishGameResponse,
+	} from '$lib/types'
+	import { audioManager } from '$lib/audioManager.svelte'
 
-	const TOTAL_TIME = 30;
+	const TOTAL_TIME = 30
 
 	let name = $state('')
-	let currentQuestion = $state<PublicQuestion | null>(null);
-	let questionIndex = $state(0);
-	let score = $state(0);
-	let timeLeft = $state(TOTAL_TIME);
-	let selectedKey = $state<string | null>(null);
-	let phase = $state<'playing' | 'feedback'>('playing');
-	let showPopup = $state(false);
-	let countdown = $state<number | 'Go!' | null>(3);
+	let currentQuestion = $state<PublicQuestion | null>(null)
+	let questionIndex = $state(0)
+	let score = $state(0)
+	let timeLeft = $state(TOTAL_TIME)
+	let selectedKey = $state<string | null>(null)
+	let phase = $state<'playing' | 'feedback'>('playing')
+	let showPopup = $state(false)
+	let countdown = $state<number | 'Go!' | null>(3)
 
-	let countInterval:   ReturnType<typeof setInterval> | null = null;
-	let popupTimeout: ReturnType<typeof setTimeout> | null = null;
-	let pendingAdvance: ReturnType<typeof setTimeout> | null = null; // stores the ID of the 900ms feedback timeout
-	let hasEnded = false;
+	let countInterval: ReturnType<typeof setInterval> | null = null
+	let popupTimeout: ReturnType<typeof setTimeout> | null = null
+	let pendingAdvance: ReturnType<typeof setTimeout> | null = null // stores the ID of the 900ms feedback timeout
+	let hasEnded = false
 
-	let gameTimerInterval: ReturnType<typeof setInterval> | null = null;
-	let lastAnswerCorrect = $state<boolean | null>(null);
-	let startPromise: Promise<StartGameResponse> | null = null;
+	let gameTimerInterval: ReturnType<typeof setInterval> | null = null
+	let lastAnswerCorrect = $state<boolean | null>(null)
+	let startPromise: Promise<StartGameResponse> | null = null
 
+	const progress = $derived((timeLeft / TOTAL_TIME) * 100)
+	const timerColor = $derived(timeLeft > 10 ? '#a060e0' : timeLeft > 5 ? '#f59e0b' : '#ef4444')
 
-	const progress = $derived((timeLeft / TOTAL_TIME) * 100);
-	const timerColor = $derived(timeLeft > 10 ? '#a060e0' : timeLeft > 5 ? '#f59e0b' : '#ef4444');
-	
 	function startTimer() {
 		if (gameTimerInterval) {
-			clearInterval(gameTimerInterval);
-			gameTimerInterval = null;
+			clearInterval(gameTimerInterval)
+			gameTimerInterval = null
 		}
 
 		gameTimerInterval = setInterval(() => {
-			timeLeft -= 1;
+			timeLeft -= 1
 			if (timeLeft <= 0) {
-				timeLeft = 0;
+				timeLeft = 0
 				if (gameTimerInterval) {
-					clearInterval(gameTimerInterval);
-					gameTimerInterval = null;
+					clearInterval(gameTimerInterval)
+					gameTimerInterval = null
 				}
-			void endGame();
+				void endGame()
 			}
-		}, 1000);
+		}, 1000)
 	}
 
 	function startCountdown() {
-        let count = 3;
-        countdown  = 3;
+		let count = 3
+		countdown = 3
 
-        countInterval = setInterval(() => {
-            count--;
+		countInterval = setInterval(() => {
+			count--
 
 			if (count > 0) {
-				countdown = count;
+				countdown = count
 				if (count === 2 && !startPromise) {
-                	startPromise = startGame();
+					startPromise = startGame()
 				}
-            } else if (count === 0) {
-                countdown = 'Go!';
-            } else {
-                clearInterval(countInterval!);
-                countInterval = null;
-                countdown     = null;
+			} else if (count === 0) {
+				countdown = 'Go!'
+			} else {
+				clearInterval(countInterval!)
+				countInterval = null
+				countdown = null
 
-                // Start authoritative game session and load first question
+				// Start authoritative game session and load first question
 				void (async () => {
 					try {
-						const data = await (startPromise ?? startGame());
-						startPromise = null;
-						currentQuestion = data.question;
-						questionIndex = data.questionIndex;
-						score = data.score;
-						timeLeft = Math.min(TOTAL_TIME, Math.ceil(data.timeLeftMs / 1000));
-						startTimer();
+						const data = await (startPromise ?? startGame())
+						startPromise = null
+						currentQuestion = data.question
+						questionIndex = data.questionIndex
+						score = data.score
+						timeLeft = Math.min(TOTAL_TIME, Math.ceil(data.timeLeftMs / 1000))
+						startTimer()
 					} catch (e) {
-						console.error('Failed to start game:', e);
-						goto('/');
+						console.error('Failed to start game:', e)
+						goto('/')
 					}
-				})();
-            }
-        }, 1000);
-    }
-
+				})()
+			}
+		}, 1000)
+	}
 
 	function choose(key: string) {
-		if (phase !== 'playing' || !currentQuestion) return;
+		if (phase !== 'playing' || !currentQuestion) return
 
-		audioManager.playSfx('click');
-		selectedKey = key;
-		phase = 'feedback';
+		audioManager.playSfx('click')
+		selectedKey = key
+		phase = 'feedback'
 
-		const currentQuestionId = currentQuestion.id;
+		const currentQuestionId = currentQuestion.id
 
 		void (async () => {
 			try {
-				const res = await submitAnswer(currentQuestionId, key);
-				if (hasEnded) return;
-				lastAnswerCorrect = res.correct;
-				score = res.score;
-				// Don't update timeLeft here to prevent jumping. 
+				const res = await submitAnswer(currentQuestionId, key)
+				if (hasEnded) return
+				lastAnswerCorrect = res.correct
+				score = res.score
+				// Don't update timeLeft here to prevent jumping.
 				// The local timer handles the display, while the server enforces the limit.
 
 				if (res.correct) {
-				audioManager.playSfx('correct');
+					audioManager.playSfx('correct')
 				} else {
-				audioManager.playSfx('wrong');
+					audioManager.playSfx('wrong')
 				}
 
 				if (res.finished) {
-				await endGame();
-				return;
+					await endGame()
+					return
 				}
 
 				pendingAdvance = setTimeout(() => {
-					if (hasEnded) return;
-					currentQuestion = res.question;
-					questionIndex = res.questionIndex;
-					lastAnswerCorrect = null;
-					selectedKey = null;
-					phase = 'playing';
-				}, 800);
-
+					if (hasEnded) return
+					currentQuestion = res.question
+					questionIndex = res.questionIndex
+					lastAnswerCorrect = null
+					selectedKey = null
+					phase = 'playing'
+				}, 800)
 			} catch (e) {
-				console.error('Failed to submit answer:', e);
-				if (!hasEnded) await endGame();
+				console.error('Failed to submit answer:', e)
+				if (!hasEnded) await endGame()
 			}
-		})();
+		})()
 	}
 
-	 
 	async function endGame() {
-        if (hasEnded) return;
-        hasEnded = true;
+		if (hasEnded) return
+		hasEnded = true
 
-        if (pendingAdvance) {
-            clearTimeout(pendingAdvance);
-            pendingAdvance = null;
-        }
-
-        if (gameTimerInterval) {
-			clearInterval(gameTimerInterval);
-			gameTimerInterval = null;
+		if (pendingAdvance) {
+			clearTimeout(pendingAdvance)
+			pendingAdvance = null
 		}
 
-        try {
-            const finishRes = await finishGameApi();
-			if (finishRes) {
-				score = finishRes.score;
-				timeLeft = Math.ceil(finishRes.timeLeftMs / 1000);
-			}
-        } catch (e) {
-            console.error('Failed to finish game session:', e);
-        }
+		if (gameTimerInterval) {
+			clearInterval(gameTimerInterval)
+			gameTimerInterval = null
+		}
 
-        showPopup    = true;
-        popupTimeout = setTimeout(() => {
-            sessionStorage.setItem('lastScore', String(score));
-            goto('/leaderboard?played=true');
-        }, 2000);
-    }
+		try {
+			const finishRes = await finishGameApi()
+			if (finishRes) {
+				score = finishRes.score
+				timeLeft = Math.ceil(finishRes.timeLeftMs / 1000)
+			}
+		} catch (e) {
+			console.error('Failed to finish game session:', e)
+		}
+
+		showPopup = true
+		popupTimeout = setTimeout(() => {
+			sessionStorage.setItem('lastScore', String(score))
+			goto('/leaderboard?played=true')
+		}, 2000)
+	}
 
 	// Start Game
 	async function startGame(): Promise<StartGameResponse> {
 		const res = await fetch('/api/game/start', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ playerName: name })
-		});
+			body: JSON.stringify({ playerName: name }),
+		})
 
 		if (!res.ok) {
-			throw new Error('Failed to start game');
+			throw new Error('Failed to start game')
 		}
 
-		return (await res.json()) as StartGameResponse;
+		return (await res.json()) as StartGameResponse
 	}
 
 	// Submit answer
@@ -185,57 +186,59 @@
 		const res = await fetch('/api/game/answer', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ questionId, choiceKey })
-		});
+			body: JSON.stringify({ questionId, choiceKey }),
+		})
 
 		if (!res.ok) {
-			throw new Error('Failed to submit answer');
+			throw new Error('Failed to submit answer')
 		}
 
-		return (await res.json()) as AnswerGameResponse;
+		return (await res.json()) as AnswerGameResponse
 	}
 
 	// Finish Game
 	async function finishGameApi(): Promise<FinishGameResponse | null> {
 		const res = await fetch('/api/game/finish', {
-			method: 'POST'
-		});
+			method: 'POST',
+		})
 
 		if (!res.ok) {
-			return null;
+			return null
 		}
 
-		return (await res.json()) as FinishGameResponse;
+		return (await res.json()) as FinishGameResponse
 	}
 
-    onMount(() => {
-        const storedName = sessionStorage.getItem('playerName');
-        if (!storedName) { goto('/'); return; }
-        name = storedName;
+	onMount(() => {
+		const storedName = sessionStorage.getItem('playerName')
+		if (!storedName) {
+			goto('/')
+			return
+		}
+		name = storedName
 
-        audioManager.playQuizBgm();
+		audioManager.playQuizBgm()
 
-		startCountdown();
-        
-    });
+		startCountdown()
+	})
 
 	onDestroy(() => {
-		startPromise = null;
+		startPromise = null
 
 		if (!hasEnded) {
-			void finishGameApi();
+			void finishGameApi()
 		}
 
-		if (countInterval) clearInterval(countInterval);
-		if (pendingAdvance) clearTimeout(pendingAdvance); 
-		if (popupTimeout) clearTimeout(popupTimeout);
-		
+		if (countInterval) clearInterval(countInterval)
+		if (pendingAdvance) clearTimeout(pendingAdvance)
+		if (popupTimeout) clearTimeout(popupTimeout)
+
 		if (gameTimerInterval) {
-			clearInterval(gameTimerInterval);
-			gameTimerInterval = null;
+			clearInterval(gameTimerInterval)
+			gameTimerInterval = null
 		}
-		audioManager.fadeOut(1000);
-	});
+		audioManager.fadeOut(1000)
+	})
 </script>
 
 <svelte:head>
@@ -264,10 +267,7 @@
 		</div>
 
 		<div class="timer-bar-track">
-			<div
-				class="timer-bar-fill"
-				style="width: {progress}%; background: {timerColor}"
-			></div>
+			<div class="timer-bar-fill" style="width: {progress}%; background: {timerColor}"></div>
 		</div>
 
 		{#if currentQuestion}
@@ -280,8 +280,12 @@
 				{#each currentQuestion.choices as choice}
 					<button
 						class="choice-btn"
-						class:correct={phase === 'feedback' && selectedKey === choice.key && lastAnswerCorrect === true}
-						class:wrong={phase === 'feedback' && selectedKey === choice.key && lastAnswerCorrect === false}
+						class:correct={phase === 'feedback' &&
+							selectedKey === choice.key &&
+							lastAnswerCorrect === true}
+						class:wrong={phase === 'feedback' &&
+							selectedKey === choice.key &&
+							lastAnswerCorrect === false}
 						class:dim={phase === 'feedback' && selectedKey !== choice.key}
 						disabled={phase === 'feedback' || countdown !== null}
 						onclick={() => choose(choice.key)}
@@ -301,16 +305,15 @@
 		<p class="player-tag">👤 {name}</p>
 	</main>
 	{#if countdown !== null}
-        <div class="countdown-overlay">
-            {#key countdown}
-                <p class="countdown-text">{countdown}</p>
-            {/key}
-    	</div>
-    {/if}
+		<div class="countdown-overlay">
+			{#key countdown}
+				<p class="countdown-text">{countdown}</p>
+			{/key}
+		</div>
+	{/if}
 	{#if showPopup}
-		<div class="popup-overlay">	
+		<div class="popup-overlay">
 			<p class="score-reveal">Time's Up!</p>
 		</div>
 	{/if}
 </div>
-

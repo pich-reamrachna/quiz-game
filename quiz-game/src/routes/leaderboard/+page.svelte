@@ -1,174 +1,180 @@
 <!-- Leaderboard screen -->
 <script lang="ts">
-    import './leaderboard.css'
-	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
-	import type { ScoreRow } from '$lib/types';
-	import { audioManager } from '$lib/audioManager.svelte';
-	import { page } from '$app/state';
+	import './leaderboard.css'
+	import { goto } from '$app/navigation'
+	import { onMount } from 'svelte'
+	import type { ScoreRow } from '$lib/types'
+	import { audioManager } from '$lib/audioManager.svelte'
+	import { page } from '$app/state'
 
-	let entries = $state<ScoreRow[]>([]);
-	let status  = $state<'loading' | 'error' | 'empty' | 'ok'>('loading');
-	let showPlayAgain = $derived(page.url.searchParams.has('played')); // check for query of "played=true" in leaderboard url
+	let entries = $state<ScoreRow[]>([])
+	let status = $state<'loading' | 'error' | 'empty' | 'ok'>('loading')
+	let showPlayAgain = $derived(page.url.searchParams.has('played')) // check for query of "played=true" in leaderboard url
 
-	let showResult  = $state(false);
-    let resultScore = $state(0);
-    let resultName  = $state('');
+	let showResult = $state(false)
+	let resultScore = $state(0)
+	let resultName = $state('')
 
-	let fwCanvasFull:  HTMLCanvasElement | undefined = $state();
-	
+	let fwCanvasFull: HTMLCanvasElement | undefined = $state()
+
 	onMount(async () => {
-        // Check if coming from play screen with a score in sessionStorage.
-		const storedScore = sessionStorage.getItem('lastScore');
-		const storedName = sessionStorage.getItem('playerName')?.trim() ?? '';
-		resultName = storedName;
+		// Check if coming from play screen with a score in sessionStorage.
+		const storedScore = sessionStorage.getItem('lastScore')
+		const storedName = sessionStorage.getItem('playerName')?.trim() ?? ''
+		resultName = storedName
 
 		if (storedScore !== null) {
-			const parsedScore = Number(storedScore);
+			const parsedScore = Number(storedScore)
 			if (Number.isFinite(parsedScore) && parsedScore >= 0) {
-				resultScore = parsedScore;
-    			showResult = true;
-					setTimeout(() => {
-						startFireworks(fwCanvasFull,  false);
-                }, 50);
+				resultScore = parsedScore
+				showResult = true
+				setTimeout(() => {
+					startFireworks(fwCanvasFull, false)
+				}, 50)
 			}
 			// One-time popup trigger; do not keep showing on refreshes.
-			sessionStorage.removeItem('lastScore');
+			sessionStorage.removeItem('lastScore')
 		}
 		// Ensure home BGM is playing/continues
-		audioManager.playHomeBgm();
+		audioManager.playHomeBgm()
 
 		try {
-			const res = await fetch('/api/scores?limit=100');
-			if (!res.ok) throw new Error();
-			const data: ScoreRow[] = await res.json();
-			entries = data;
-			status  = data.length === 0 ? 'empty' : 'ok';
+			const res = await fetch('/api/scores?limit=100')
+			if (!res.ok) throw new Error()
+			const data: ScoreRow[] = await res.json()
+			entries = data
+			status = data.length === 0 ? 'empty' : 'ok'
 		} catch {
-			status = 'error';
+			status = 'error'
 		}
-	});
+	})
 
 	function startFireworks(canvas: HTMLCanvasElement | undefined, isInner: boolean) {
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+		if (!canvas) return
+		const ctx = canvas.getContext('2d')
+		if (!ctx) return
 
-        canvas.width  = isInner ? canvas.offsetWidth  : window.innerWidth;
-        canvas.height = isInner ? canvas.offsetHeight : window.innerHeight;
+		canvas.width = isInner ? canvas.offsetWidth : window.innerWidth
+		canvas.height = isInner ? canvas.offsetHeight : window.innerHeight
 
-        const safeCtx    = ctx;
-        const safeCanvas = canvas;
+		const safeCtx = ctx
+		const safeCanvas = canvas
 
-        const colors = ['#ff6b6b', '#ffd93d', '#c97fff', '#4fc3f7', '#6bcb77', '#ff9f43', '#ff6eb4'];
+		const colors = ['#ff6b6b', '#ffd93d', '#c97fff', '#4fc3f7', '#6bcb77', '#ff9f43', '#ff6eb4']
 
-        const dots: {
-            x: number; y: number;
-            vx: number; vy: number;
-            alpha: number; color: string;
-            isConfetti: boolean; rotation: number;
-        }[] = [];
+		const dots: {
+			x: number
+			y: number
+			vx: number
+			vy: number
+			alpha: number
+			color: string
+			isConfetti: boolean
+			rotation: number
+		}[] = []
 
-        function burst(x: number, y: number) {
-            for (let i = 0; i < 50; i++) {
-                const angle = (Math.PI * 2 * i) / 50;
-                const speed = Math.random() * 4 + 1;
-                dots.push({
-                    x, y,
-                    vx: Math.cos(angle) * speed + (Math.random() - 0.5) * 2,
-                    vy: Math.sin(angle) * speed - Math.random() * 3,
-                    alpha: 1,
-                    color: colors[Math.floor(Math.random() * colors.length)],
-                    isConfetti: i % 3 === 0,
-                    rotation: Math.random() * Math.PI * 2
-                });
-            }
-        }
+		function burst(x: number, y: number) {
+			for (let i = 0; i < 50; i++) {
+				const angle = (Math.PI * 2 * i) / 50
+				const speed = Math.random() * 4 + 1
+				dots.push({
+					x,
+					y,
+					vx: Math.cos(angle) * speed + (Math.random() - 0.5) * 2,
+					vy: Math.sin(angle) * speed - Math.random() * 3,
+					alpha: 1,
+					color: colors[Math.floor(Math.random() * colors.length)],
+					isConfetti: i % 3 === 0,
+					rotation: Math.random() * Math.PI * 2,
+				})
+			}
+		}
 
-        let frame: number;
+		let frame: number
 
-        function draw() {
-            safeCtx.fillStyle = 'rgba(0,0,0,0.12)';
-            safeCtx.fillRect(0, 0, safeCanvas.width, safeCanvas.height);
+		function draw() {
+			safeCtx.fillStyle = 'rgba(0,0,0,0.12)'
+			safeCtx.fillRect(0, 0, safeCanvas.width, safeCanvas.height)
 
-            for (let i = dots.length - 1; i >= 0; i--) {
-                const d = dots[i];
-                d.x        += d.vx;
-                d.y        += d.vy;
-                d.vy       += 0.06;
-                d.alpha    -= 0.016;
-                d.rotation += 0.08;
+			for (let i = dots.length - 1; i >= 0; i--) {
+				const d = dots[i]
+				d.x += d.vx
+				d.y += d.vy
+				d.vy += 0.06
+				d.alpha -= 0.016
+				d.rotation += 0.08
 
-                if (d.alpha <= 0) { dots.splice(i, 1); continue; }
+				if (d.alpha <= 0) {
+					dots.splice(i, 1)
+					continue
+				}
 
-                safeCtx.globalAlpha = d.alpha;
+				safeCtx.globalAlpha = d.alpha
 
-                if (d.isConfetti) {
-                    // Rectangle confetti piece
-                    safeCtx.save();
-                    safeCtx.translate(d.x, d.y);
-                    safeCtx.rotate(d.rotation);
-                    safeCtx.fillStyle = d.color;
-                    safeCtx.fillRect(-5, -2, 10, 5);
-                    safeCtx.restore();
-                } else {
-                    // Circle particle
-                    safeCtx.beginPath();
-                    safeCtx.arc(d.x, d.y, 3, 0, Math.PI * 2);
-                    safeCtx.fillStyle = d.color;
-                    safeCtx.fill();
-                }
+				if (d.isConfetti) {
+					// Rectangle confetti piece
+					safeCtx.save()
+					safeCtx.translate(d.x, d.y)
+					safeCtx.rotate(d.rotation)
+					safeCtx.fillStyle = d.color
+					safeCtx.fillRect(-5, -2, 10, 5)
+					safeCtx.restore()
+				} else {
+					// Circle particle
+					safeCtx.beginPath()
+					safeCtx.arc(d.x, d.y, 3, 0, Math.PI * 2)
+					safeCtx.fillStyle = d.color
+					safeCtx.fill()
+				}
 
-                safeCtx.globalAlpha = 1;
-            }
+				safeCtx.globalAlpha = 1
+			}
 
-            frame = requestAnimationFrame(draw);
-        }
+			frame = requestAnimationFrame(draw)
+		}
 
-        let count = 0;
-        const interval = setInterval(() => {
-            burst(
-                Math.random() * safeCanvas.width  * 0.8 + safeCanvas.width  * 0.1,
-                Math.random() * safeCanvas.height * 0.4 + 50
-            );
-            count++;
-            if (count >= 10) clearInterval(interval);
-        }, 400);
+		let count = 0
+		const interval = setInterval(() => {
+			burst(
+				Math.random() * safeCanvas.width * 0.8 + safeCanvas.width * 0.1,
+				Math.random() * safeCanvas.height * 0.4 + 50,
+			)
+			count++
+			if (count >= 10) clearInterval(interval)
+		}, 400)
 
-        draw();
+		draw()
 
-        setTimeout(() => {
-            cancelAnimationFrame(frame);
-            safeCtx.clearRect(0, 0, safeCanvas.width, safeCanvas.height);
-        }, 6000);
-    }
-
+		setTimeout(() => {
+			cancelAnimationFrame(frame)
+			safeCtx.clearRect(0, 0, safeCanvas.width, safeCanvas.height)
+		}, 6000)
+	}
 
 	function handleBack() {
-		audioManager.playSfx('click');
-		goto('/');
+		audioManager.playSfx('click')
+		goto('/')
 	}
 
 	function handlePlayAgain() {
-		audioManager.playSfx('click');
-		goto('/play');
+		audioManager.playSfx('click')
+		goto('/play')
 	}
 
 	function formatDate(iso: string) {
 		return new Date(iso).toLocaleDateString('ja-JP', {
-			year:  'numeric',
+			year: 'numeric',
 			month: '2-digit',
-			day:   '2-digit'
-		});
+			day: '2-digit',
+		})
 	}
 
 	function medal(rank: number) {
-		if (rank === 1) return '🥇';
-		if (rank === 2) return '🥈';
-		if (rank === 3) return '🥉';
-		return String(rank);
+		if (rank === 1) return '🥇'
+		if (rank === 2) return '🥈'
+		if (rank === 3) return '🥉'
+		return String(rank)
 	}
-
 </script>
 
 <svelte:head>
@@ -178,9 +184,11 @@
 		href="https://fonts.googleapis.com/css2?family=Zen+Dots&family=Noto+Sans+JP:wght@400;700&display=swap"
 		rel="stylesheet"
 	/>
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"/>
-	<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet"/>
-
+	<link
+		rel="stylesheet"
+		href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+	/>
+	<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
 </svelte:head>
 
 <div class="page">
@@ -202,20 +210,17 @@
 					<div class="spinner"></div>
 					<p>Loading scores…</p>
 				</div>
-
 			{:else if status === 'error'}
 				<div class="placeholder error-state">
 					<p class="ph-icon">⚠️</p>
 					<p>Failed to load leaderboard.</p>
 					<button class="retry-btn" onclick={() => window.location.reload()}>Retry</button>
 				</div>
-
 			{:else if status === 'empty'}
 				<div class="placeholder">
 					<p class="ph-icon">📭</p>
 					<p>No scores yet. Be the first!</p>
 				</div>
-
 			{:else}
 				<table class="table">
 					<thead>
@@ -240,23 +245,21 @@
 			{/if}
 		</div>
 		{#if showPlayAgain}
-		<button class="btn-play" onclick={handlePlayAgain}>▶ Play Again</button>
+			<button class="btn-play" onclick={handlePlayAgain}>▶ Play Again</button>
 		{/if}
 	</main>
 	<!-- Result popup — only shows when coming from play screen -->
-    {#if showResult}
-	<canvas bind:this={fwCanvasFull} class="fw-canvas-full"></canvas>
-        <div class="popup-overlay">
-            <div class="popup-card">
-			
-                <button class="close-btn" onclick={() => showResult = false}>✕</button>
+	{#if showResult}
+		<canvas bind:this={fwCanvasFull} class="fw-canvas-full"></canvas>
+		<div class="popup-overlay">
+			<div class="popup-card">
+				<button class="close-btn" onclick={() => (showResult = false)}>✕</button>
 
-                <h2 class="popup-title">ゲームオーバー!</h2>
-                <p class="popup-score">{resultScore}</p>
+				<h2 class="popup-title">ゲームオーバー!</h2>
+				<p class="popup-score">{resultScore}</p>
 				<p class="popup-msg">プレイヤー {resultName}</p>
-                <p class="popup-msg">頑張れ！練習を続けてください！</p>
-
-            </div>
-        </div>
-    {/if}
+				<p class="popup-msg">頑張れ！練習を続けてください！</p>
+			</div>
+		</div>
+	{/if}
 </div>
