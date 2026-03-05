@@ -2,8 +2,10 @@
 	"useTabs": true,
 	"endOfLine": "lf",
 	"singleQuote": true,
-	"trailingComma": "none",
+	"trailingComma": "all",
+	"endOfLine": "lf",
 	"printWidth": 100,
+	"semi": false,
 	"plugins": [
 		"prettier-plugin-svelte",
 		"prettier-plugin-tailwindcss"
