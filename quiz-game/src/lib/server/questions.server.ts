@@ -1,4 +1,4 @@
-import type { Question } from '$lib/types';
+import type { Question } from '$lib/types'
 
 export const QUESTIONS: Question[] = [
 	{
@@ -271,4 +271,4 @@ export const QUESTIONS: Question[] = [
 			{ key: 'C', text: '彼は忘れそうです。', isCorrect: false },
 		],
 	},
-];
+]

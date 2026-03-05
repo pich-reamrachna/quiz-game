@@ -1,37 +1,36 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import './credit.css';
-	import { onMount, onDestroy } from 'svelte';
-	import { audioManager } from '$lib/audioManager.svelte';
+	import { goto } from '$app/navigation'
+	import './credit.css'
+	import { onMount, onDestroy } from 'svelte'
+	import { audioManager } from '$lib/audioManager.svelte'
 
-	let creditCard = $state<HTMLElement | null>(null);
-	let timer: ReturnType<typeof setInterval> | null = null;
-	let isPaused = false;
+	let creditCard = $state<HTMLElement | null>(null)
+	let timer: ReturnType<typeof setInterval> | null = null
+	let isPaused = false
 
 	onMount(() => {
-		audioManager.playHomeBgm();
+		audioManager.playHomeBgm()
 
 		timer = setInterval(() => {
-			if (!creditCard || isPaused) return;
+			if (!creditCard || isPaused) return
 
-			const atBottom =
-				creditCard.scrollTop + creditCard.clientHeight >= creditCard.scrollHeight - 1; // scrollTop, clientHeight are built-in DOM properties of scrollable elements
+			const atBottom = creditCard.scrollTop + creditCard.clientHeight >= creditCard.scrollHeight - 1 // scrollTop, clientHeight are built-in DOM properties of scrollable elements
 
 			if (atBottom) {
-				creditCard.scrollTop = 0; // loop back to top
+				creditCard.scrollTop = 0 // loop back to top
 			} else {
-				creditCard.scrollTop += 1; // speed
+				creditCard.scrollTop += 1 // speed
 			}
-		}, 25);
-	});
+		}, 25)
+	})
 
 	onDestroy(() => {
-		if (timer) clearInterval(timer);
-	});
+		if (timer) clearInterval(timer)
+	})
 
 	function handleBack() {
-		audioManager.playSfx('click');
-		goto('/');
+		audioManager.playSfx('click')
+		goto('/')
 	}
 </script>
 
