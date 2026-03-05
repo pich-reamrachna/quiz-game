@@ -9,11 +9,11 @@
 
 	onMount(() => {
 		// find a saved name before
-		const savedName = sessionStorage.getItem('playerName')
+		const savedName = sessionStorage.getItem('playerName');
 		if (savedName) {
 			name = savedName;
 		}
-		
+
 		// Play BGM on mount. If blocked, it will play on first click.
 		audioManager.playHomeBgm();
 	});
@@ -26,7 +26,7 @@
 		}
 
 		// save the name to browser ram
-		sessionStorage.setItem('playerName', name.trim())
+		sessionStorage.setItem('playerName', name.trim());
 
 		goto(`/play`);
 	}
@@ -55,10 +55,10 @@
 		rel="stylesheet"
 	/>
 	<link
-		rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"	
+		rel="stylesheet"
+		href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
 	/>
-	<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
-
+	<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
 </svelte:head>
 
 <div class="start-page">
@@ -66,7 +66,7 @@
 
 	<main class="content">
 		<h1 class="startPage-title">日本語クイズ</h1>
-	
+
 		<div class="input-group">
 			<label for="name-input">名前を入力してください</label>
 			<div class="input-wrap">
@@ -94,7 +94,6 @@
 				<img src="/play-button.png" alt="Play" />
 			</button>
 			<!-- Temporary Button -->
-			
 		</div>
 
 		<div class="btm-btn-group">
