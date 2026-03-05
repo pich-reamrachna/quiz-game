@@ -3,6 +3,7 @@
 	"singleQuote": true,
 	"trailingComma": "all",
 	"printWidth": 100,
+	"semi": false,
 	"plugins": ["prettier-plugin-svelte", "prettier-plugin-tailwindcss"],
 	"tailwindStylesheet": "./src/routes/layout.css",
 	"overrides": [

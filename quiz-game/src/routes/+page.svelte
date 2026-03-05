@@ -1,48 +1,48 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { onMount, onDestroy } from 'svelte';
-	import { audioManager } from '$lib/audioManager.svelte';
-	import './startPage.css';
+	import { goto } from '$app/navigation'
+	import { onMount, onDestroy } from 'svelte'
+	import { audioManager } from '$lib/audioManager.svelte'
+	import './startPage.css'
 
-	let name = $state('');
-	let error = $state('');
+	let name = $state('')
+	let error = $state('')
 
 	onMount(() => {
 		// find a saved name before
-		const savedName = sessionStorage.getItem('playerName');
+		const savedName = sessionStorage.getItem('playerName')
 		if (savedName) {
-			name = savedName;
+			name = savedName
 		}
 
 		// Play BGM on mount. If blocked, it will play on first click.
-		audioManager.playHomeBgm();
-	});
+		audioManager.playHomeBgm()
+	})
 
 	function handleStart() {
-		audioManager.playSfx('click');
+		audioManager.playSfx('click')
 		if (!name.trim()) {
-			error = 'Please enter your name!';
-			return;
+			error = 'Please enter your name!'
+			return
 		}
 
 		// save the name to browser ram
-		sessionStorage.setItem('playerName', name.trim());
+		sessionStorage.setItem('playerName', name.trim())
 
-		goto(`/play`);
+		goto(`/play`)
 	}
 
 	function handleLeaderboard() {
-		audioManager.playSfx('click');
-		goto('/leaderboard');
+		audioManager.playSfx('click')
+		goto('/leaderboard')
 	}
 
 	function handleCredit() {
-		audioManager.playSfx('click');
-		goto('/credit');
+		audioManager.playSfx('click')
+		goto('/credit')
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
-		if (e.key === 'Enter') handleStart();
+		if (e.key === 'Enter') handleStart()
 	}
 </script>
 
