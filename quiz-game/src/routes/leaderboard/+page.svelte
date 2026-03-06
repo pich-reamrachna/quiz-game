@@ -6,11 +6,10 @@
 	import { onMount } from 'svelte'
 	import type { ScoreRow } from '$lib/types'
 	import { audioManager } from '$lib/audioManager.svelte'
-	import { page } from '$app/state'
 
 	let entries = $state<ScoreRow[]>([])
 	let status = $state<'loading' | 'error' | 'empty' | 'ok'>('loading')
-	let showPlayAgain = $derived(page.url.searchParams.has('played')) // check for query of "played=true" in leaderboard url
+	let showPlayAgain = $state(false)
 
 	let showResult = $state(false)
 	let resultScore = $state(0)
@@ -19,6 +18,10 @@
 	let fwCanvasFull: HTMLCanvasElement | undefined = $state()
 
 	onMount(async () => {
+		showPlayAgain =
+			window.location.search.includes('played=true') || sessionStorage.getItem('played') === 'true'
+		sessionStorage.removeItem('played')
+
 		// Check if coming from play screen with a score in sessionStorage.
 		const storedScore = sessionStorage.getItem('lastScore')
 		const storedName = sessionStorage.getItem('playerName')?.trim() ?? ''

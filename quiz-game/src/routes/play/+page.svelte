@@ -163,7 +163,8 @@
 		showPopup = true
 		popupTimeout = setTimeout(() => {
 			sessionStorage.setItem('lastScore', String(score))
-			goto(resolve('/leaderboard?played=true'))
+			sessionStorage.setItem('played', 'true')
+			goto(resolve('/leaderboard'))
 		}, 2000)
 	}
 
