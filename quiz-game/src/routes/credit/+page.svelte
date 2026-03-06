@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation'
+	import { resolve } from '$app/paths'
 	import './credit.css'
 	import { onMount, onDestroy } from 'svelte'
 	import { audioManager } from '$lib/audioManager.svelte'
@@ -30,7 +31,7 @@
 
 	function handleBack() {
 		audioManager.playSfx('click')
-		goto('/')
+		goto(resolve('/'))
 	}
 </script>
 

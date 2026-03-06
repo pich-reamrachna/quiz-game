@@ -2,6 +2,7 @@
 <script lang="ts">
 	import './leaderboard.css'
 	import { goto } from '$app/navigation'
+	import { resolve } from '$app/paths'
 	import { onMount } from 'svelte'
 	import type { ScoreRow } from '$lib/types'
 	import { audioManager } from '$lib/audioManager.svelte'
@@ -153,12 +154,12 @@
 
 	function handleBack() {
 		audioManager.playSfx('click')
-		goto('/')
+		goto(resolve('/'))
 	}
 
 	function handlePlayAgain() {
 		audioManager.playSfx('click')
-		goto('/play')
+		goto(resolve('/play'))
 	}
 
 	function formatDate(iso: string) {
@@ -232,7 +233,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each entries as entry, i}
+						{#each entries as entry, i (entry.id)}
 							<tr class:top3={i < 3}>
 								<td class="col-rank rank-cell">{medal(i + 1)}</td>
 								<td class="col-name name-cell">{entry.name}</td>
