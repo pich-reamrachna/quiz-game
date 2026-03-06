@@ -2,14 +2,14 @@
 <script lang="ts">
 	import './leaderboard.css'
 	import { goto } from '$app/navigation'
+	import { resolve } from '$app/paths'
 	import { onMount } from 'svelte'
 	import type { ScoreRow } from '$lib/types'
 	import { audioManager } from '$lib/audioManager.svelte'
-	import { page } from '$app/state'
 
 	let entries = $state<ScoreRow[]>([])
 	let status = $state<'loading' | 'error' | 'empty' | 'ok'>('loading')
-	let showPlayAgain = $derived(page.url.searchParams.has('played')) // check for query of "played=true" in leaderboard url
+	let showPlayAgain = $state(false)
 
 	let showResult = $state(false)
 	let resultScore = $state(0)
@@ -18,6 +18,10 @@
 	let fwCanvasFull: HTMLCanvasElement | undefined = $state()
 
 	onMount(async () => {
+		showPlayAgain =
+			window.location.search.includes('played=true') || sessionStorage.getItem('played') === 'true'
+		sessionStorage.removeItem('played')
+
 		// Check if coming from play screen with a score in sessionStorage.
 		const storedScore = sessionStorage.getItem('lastScore')
 		const storedName = sessionStorage.getItem('playerName')?.trim() ?? ''
@@ -153,12 +157,12 @@
 
 	function handleBack() {
 		audioManager.playSfx('click')
-		goto('/')
+		goto(resolve('/'))
 	}
 
 	function handlePlayAgain() {
 		audioManager.playSfx('click')
-		goto('/play')
+		goto(resolve('/play'))
 	}
 
 	function formatDate(iso: string) {
@@ -232,7 +236,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each entries as entry, i}
+						{#each entries as entry, i (entry.id)}
 							<tr class:top3={i < 3}>
 								<td class="col-rank rank-cell">{medal(i + 1)}</td>
 								<td class="col-name name-cell">{entry.name}</td>

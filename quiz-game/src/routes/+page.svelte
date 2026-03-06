@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation'
-	import { onMount, onDestroy } from 'svelte'
+	import { resolve } from '$app/paths'
+	import { onMount } from 'svelte'
 	import { audioManager } from '$lib/audioManager.svelte'
 	import './startPage.css'
 
@@ -28,17 +29,17 @@
 		// save the name to browser ram
 		sessionStorage.setItem('playerName', name.trim())
 
-		goto(`/play`)
+		goto(resolve('/play'))
 	}
 
 	function handleLeaderboard() {
 		audioManager.playSfx('click')
-		goto('/leaderboard')
+		goto(resolve('/leaderboard'))
 	}
 
 	function handleCredit() {
 		audioManager.playSfx('click')
-		goto('/credit')
+		goto(resolve('/credit'))
 	}
 
 	function handleKeydown(e: KeyboardEvent) {

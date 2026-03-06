@@ -1,6 +1,7 @@
 <script lang="ts">
 	import './quiz.css'
 	import { goto } from '$app/navigation'
+	import { resolve } from '$app/paths'
 	import { onMount, onDestroy } from 'svelte'
 	import type {
 		PublicQuestion,
@@ -84,7 +85,7 @@
 						startTimer()
 					} catch (e) {
 						console.error('Failed to start game:', e)
-						goto('/')
+						goto(resolve('/'))
 					}
 				})()
 			}
@@ -162,7 +163,8 @@
 		showPopup = true
 		popupTimeout = setTimeout(() => {
 			sessionStorage.setItem('lastScore', String(score))
-			goto('/leaderboard?played=true')
+			sessionStorage.setItem('played', 'true')
+			goto(resolve('/leaderboard'))
 		}, 2000)
 	}
 
@@ -212,7 +214,7 @@
 	onMount(() => {
 		const storedName = sessionStorage.getItem('playerName')
 		if (!storedName) {
-			goto('/')
+			goto(resolve('/'))
 			return
 		}
 		name = storedName
@@ -277,7 +279,7 @@
 			</div>
 
 			<div class="choices">
-				{#each currentQuestion.choices as choice}
+				{#each currentQuestion.choices as choice (choice.key)}
 					<button
 						class="choice-btn"
 						class:correct={phase === 'feedback' &&
