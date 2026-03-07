@@ -436,19 +436,20 @@ tr:hover td {
 @media (max-width: 640px) {
 	.header {
 		grid-template-columns: 1fr;
-		gap: 0.9rem;
+		gap: 0.75rem;
 	}
 
 	.leaderboard-back-btn {
 		grid-column: 1;
-		width: 30%;
-		max-width: 240px;
+		width: auto;
+		padding: 0.5rem 1.5rem;
 		justify-self: center;
 	}
 
 	.leaderboard-title {
 		grid-column: 1;
 		width: 100%;
+		font-size: 1.1rem; 
 	}
 
 	.table-wrap {
@@ -458,5 +459,47 @@ tr:hover td {
 	.btn-play {
 		font-size: clamp(0.8rem, 4.2vw, 1rem);
 		min-height: 48px;
+	}
+	.table {
+		min-width: 100%;
+	}
+	th {
+		padding: 0.75rem 0.25rem;
+		font-size: 0.5rem;
+		letter-spacing: 0;
+	}
+
+	td {
+		padding: 0.5rem 0.25rem;
+	}
+	/* column width in leaderboard */
+	.col-rank { width: 40px; }
+	.col-score { width: 60px; }
+	.col-date { width: 70px; }
+
+	.rank-cell, .score-cell {
+		font-size: 0.85rem;
+	}
+
+	.date-cell {
+		font-size: 0.6rem;
+	}
+
+	.btn-play {
+		font-size: 0.85rem;
+		min-height: 48px;
+	}
+
+	/* smaller popup */
+	.popup-card {
+		padding: 2rem 1.5rem;
+	}
+
+	.popup-title {
+		font-size: 1.4rem;
+	}
+
+	.popup-score {
+		font-size: 3rem;
 	}
 }
