@@ -290,7 +290,7 @@
 	.card {
 		/* Shrink padding*/
 		padding: 1.5rem 1.25rem;
-		min-height: auto; 
+		min-height: auto;
 	}
 
 	.prompt-text {
