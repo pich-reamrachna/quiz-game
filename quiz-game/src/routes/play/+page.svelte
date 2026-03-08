@@ -1,5 +1,5 @@
 <script lang="ts">
-	import './quiz.css'
+	import '$lib/styles/quiz.css'
 	import { goto } from '$app/navigation'
 	import { resolve } from '$app/paths'
 	import { onMount, onDestroy } from 'svelte'
@@ -8,8 +8,8 @@
 		StartGameResponse,
 		AnswerGameResponse,
 		FinishGameResponse,
-	} from '$lib/types'
-	import { audioManager } from '$lib/audioManager.svelte'
+	} from '$lib/types/types'
+	import { audioManager } from '$lib/services/audioManager.svelte'
 
 	const TOTAL_TIME = 30
 

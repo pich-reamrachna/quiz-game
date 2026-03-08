@@ -1,4 +1,4 @@
-import type { Question, PublicQuestion } from '$lib/types'
+import type { Question, PublicQuestion } from '$lib/types/types'
 
 export function toPublicQuestion(q: Question): PublicQuestion {
 	return {

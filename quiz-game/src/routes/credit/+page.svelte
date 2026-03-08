@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation'
 	import { resolve } from '$app/paths'
-	import './credit.css'
+	import '$lib/styles/credit.css'
 	import { onMount, onDestroy } from 'svelte'
-	import { audioManager } from '$lib/audioManager.svelte'
+	import { audioManager } from '$lib/services/audioManager.svelte'
 
 	let creditCard = $state<HTMLElement | undefined>(undefined)
 	let timer: ReturnType<typeof setInterval> | undefined = undefined

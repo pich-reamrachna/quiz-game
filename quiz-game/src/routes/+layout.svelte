@@ -1,5 +1,5 @@
 <script lang="ts">
-	import './layout.css'
+	import '$lib/styles/layout.css'
 	import MuteButton from '$lib/components/MuteButton.svelte'
 
 	let { children } = $props()
