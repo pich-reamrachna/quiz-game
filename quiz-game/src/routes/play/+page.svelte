@@ -35,7 +35,7 @@
 	const progress = $derived((timeLeft / TOTAL_TIME) * 100)
 	const timerColor = $derived(timeLeft > 10 ? '#a060e0' : timeLeft > 5 ? '#f59e0b' : '#ef4444')
 
-	function startTimer() {
+	function startTimer(): void {
 		if (gameTimerInterval) {
 			clearInterval(gameTimerInterval)
 			gameTimerInterval = null
@@ -54,7 +54,7 @@
 		}, 1000)
 	}
 
-	function startCountdown() {
+	function startCountdown(): void {
 		let count = 3
 		countdown = 3
 
@@ -74,7 +74,7 @@
 				countdown = null
 
 				// Start authoritative game session and load first question
-				void (async () => {
+				void (async (): Promise<void> => {
 					try {
 						const data = await (startPromise ?? startGame())
 						startPromise = null
@@ -92,7 +92,7 @@
 		}, 1000)
 	}
 
-	function choose(key: string) {
+	function choose(key: string): void {
 		if (phase !== 'playing' || !currentQuestion) return
 
 		audioManager.playSfx('click')
@@ -101,7 +101,7 @@
 
 		const currentQuestionId = currentQuestion.id
 
-		void (async () => {
+		void (async (): Promise<void> => {
 			try {
 				const res = await submitAnswer(currentQuestionId, key)
 				if (hasEnded) return
@@ -136,7 +136,7 @@
 		})()
 	}
 
-	async function endGame() {
+	async function endGame(): Promise<void> {
 		if (hasEnded) return
 		hasEnded = true
 

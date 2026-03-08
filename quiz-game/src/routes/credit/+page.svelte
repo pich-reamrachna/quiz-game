@@ -29,7 +29,7 @@
 		if (timer) clearInterval(timer)
 	})
 
-	function handleBack() {
+	function handleBack(): void {
 		audioManager.playSfx('click')
 		goto(resolve('/'))
 	}

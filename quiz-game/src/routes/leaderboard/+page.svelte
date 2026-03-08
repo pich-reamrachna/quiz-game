@@ -53,7 +53,7 @@
 		}
 	})
 
-	function startFireworks(canvas: HTMLCanvasElement | undefined, isInner: boolean) {
+	function startFireworks(canvas: HTMLCanvasElement | undefined, isInner: boolean): void {
 		if (!canvas) return
 		const ctx = canvas.getContext('2d')
 		if (!ctx) return
@@ -77,7 +77,7 @@
 			rotation: number
 		}[] = []
 
-		function burst(x: number, y: number) {
+		function burst(x: number, y: number): void {
 			for (let i = 0; i < 50; i++) {
 				const angle = (Math.PI * 2 * i) / 50
 				const speed = Math.random() * 4 + 1
@@ -96,7 +96,7 @@
 
 		let frame: number
 
-		function draw() {
+		function draw(): void {
 			safeCtx.fillStyle = 'rgba(0,0,0,0.12)'
 			safeCtx.fillRect(0, 0, safeCanvas.width, safeCanvas.height)
 
@@ -155,17 +155,17 @@
 		}, 6000)
 	}
 
-	function handleBack() {
+	function handleBack(): void {
 		audioManager.playSfx('click')
 		goto(resolve('/'))
 	}
 
-	function handlePlayAgain() {
+	function handlePlayAgain(): void {
 		audioManager.playSfx('click')
 		goto(resolve('/play'))
 	}
 
-	function formatDate(iso: string) {
+	function formatDate(iso: string): string {
 		return new Date(iso).toLocaleDateString('ja-JP', {
 			year: 'numeric',
 			month: '2-digit',
@@ -173,7 +173,7 @@
 		})
 	}
 
-	function medal(rank: number) {
+	function medal(rank: number): string {
 		if (rank === 1) return '🥇'
 		if (rank === 2) return '🥈'
 		if (rank === 3) return '🥉'

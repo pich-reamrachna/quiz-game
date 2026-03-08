@@ -94,7 +94,13 @@ async function finalizeSession(sessionId: string, finalScore: number): Promise<v
 	}
 }
 
-export async function createGameSession(playerName: string) {
+export async function createGameSession(playerName: string): Promise<{
+	sessionId: string
+	timeLeftMs: number
+	questionIndex: number
+	score: number
+	question: PublicQuestion | null
+}> {
 	const sessionId = crypto.randomUUID()
 	const questionOrder = shuffleArray(QUESTIONS.map((q) => q.id))
 	const choiceOrderMap = buildChoiceOrderMap()

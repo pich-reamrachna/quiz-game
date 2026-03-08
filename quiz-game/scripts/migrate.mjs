@@ -15,6 +15,8 @@ const db = createClient({
 
 const files = ['migrations/001_create_scores.sql', 'migrations/002_create_game_sessions.sql']
 
+/** @param {string} sqlText
+ * @returns {string[]} */
 function toStatements(sqlText) {
 	const noBom = sqlText.replace(/^\uFEFF/, '')
 	const noComments = noBom
