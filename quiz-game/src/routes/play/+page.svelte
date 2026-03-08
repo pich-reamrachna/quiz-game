@@ -14,23 +14,23 @@
 	const TOTAL_TIME = 30
 
 	let name = $state('')
-	let currentQuestion = $state<PublicQuestion | null>(null)
+	let currentQuestion = $state<PublicQuestion | undefined>(undefined)
 	let questionIndex = $state(0)
 	let score = $state(0)
 	let timeLeft = $state(TOTAL_TIME)
-	let selectedKey = $state<string | null>(null)
+	let selectedKey = $state<string | undefined>(undefined)
 	let phase = $state<'playing' | 'feedback'>('playing')
 	let showPopup = $state(false)
-	let countdown = $state<number | 'Go!' | null>(3)
+	let countdown = $state<number | 'Go!' | undefined>(3)
 
-	let countInterval: ReturnType<typeof setInterval> | null = null
-	let popupTimeout: ReturnType<typeof setTimeout> | null = null
-	let pendingAdvance: ReturnType<typeof setTimeout> | null = null // stores the ID of the 900ms feedback timeout
+	let countInterval: ReturnType<typeof setInterval> | undefined = undefined
+	let popupTimeout: ReturnType<typeof setTimeout> | undefined = undefined
+	let pendingAdvance: ReturnType<typeof setTimeout> | undefined = undefined // stores the ID of the 900ms feedback timeout
 	let hasEnded = false
 
-	let gameTimerInterval: ReturnType<typeof setInterval> | null = null
-	let lastAnswerCorrect = $state<boolean | null>(null)
-	let startPromise: Promise<StartGameResponse> | null = null
+	let gameTimerInterval: ReturnType<typeof setInterval> | undefined = undefined
+	let lastAnswerCorrect = $state<boolean | undefined>(undefined)
+	let startPromise: Promise<StartGameResponse> | undefined = undefined
 
 	const progress = $derived((timeLeft / TOTAL_TIME) * 100)
 	const timerColor = $derived(timeLeft > 10 ? '#a060e0' : timeLeft > 5 ? '#f59e0b' : '#ef4444')
@@ -38,7 +38,7 @@
 	function startTimer(): void {
 		if (gameTimerInterval) {
 			clearInterval(gameTimerInterval)
-			gameTimerInterval = null
+			gameTimerInterval = undefined
 		}
 
 		gameTimerInterval = setInterval(() => {
@@ -47,7 +47,7 @@
 				timeLeft = 0
 				if (gameTimerInterval) {
 					clearInterval(gameTimerInterval)
-					gameTimerInterval = null
+					gameTimerInterval = undefined
 				}
 				void endGame()
 			}
@@ -70,14 +70,14 @@
 				countdown = 'Go!'
 			} else {
 				clearInterval(countInterval!)
-				countInterval = null
-				countdown = null
+				countInterval = undefined
+				countdown = undefined
 
 				// Start authoritative game session and load first question
 				void (async (): Promise<void> => {
 					try {
 						const data = await (startPromise ?? startGame())
-						startPromise = null
+						startPromise = undefined
 						currentQuestion = data.question
 						questionIndex = data.questionIndex
 						score = data.score
@@ -125,8 +125,8 @@
 					if (hasEnded) return
 					currentQuestion = res.question
 					questionIndex = res.questionIndex
-					lastAnswerCorrect = null
-					selectedKey = null
+					lastAnswerCorrect = undefined
+					selectedKey = undefined
 					phase = 'playing'
 				}, 800)
 			} catch (e) {
@@ -142,12 +142,12 @@
 
 		if (pendingAdvance) {
 			clearTimeout(pendingAdvance)
-			pendingAdvance = null
+			pendingAdvance = undefined
 		}
 
 		if (gameTimerInterval) {
 			clearInterval(gameTimerInterval)
-			gameTimerInterval = null
+			gameTimerInterval = undefined
 		}
 
 		try {
@@ -199,13 +199,13 @@
 	}
 
 	// Finish Game
-	async function finishGameApi(): Promise<FinishGameResponse | null> {
+	async function finishGameApi(): Promise<FinishGameResponse | undefined> {
 		const res = await fetch('/api/game/finish', {
 			method: 'POST',
 		})
 
 		if (!res.ok) {
-			return null
+			return undefined
 		}
 
 		return (await res.json()) as FinishGameResponse
@@ -225,7 +225,7 @@
 	})
 
 	onDestroy(() => {
-		startPromise = null
+		startPromise = undefined
 
 		if (!hasEnded) {
 			void finishGameApi()
@@ -237,7 +237,7 @@
 
 		if (gameTimerInterval) {
 			clearInterval(gameTimerInterval)
-			gameTimerInterval = null
+			gameTimerInterval = undefined
 		}
 		audioManager.fadeOut(1000)
 	})
@@ -289,7 +289,7 @@
 							selectedKey === choice.key &&
 							lastAnswerCorrect === false}
 						class:dim={phase === 'feedback' && selectedKey !== choice.key}
-						disabled={phase === 'feedback' || countdown !== null}
+						disabled={phase === 'feedback' || countdown !== undefined}
 						onclick={() => choose(choice.key)}
 					>
 						<span class="choice-label">{choice.key}</span>
@@ -306,7 +306,7 @@
 
 		<p class="player-tag">👤 {name}</p>
 	</main>
-	{#if countdown !== null}
+	{#if countdown !== undefined}
 		<div class="countdown-overlay">
 			{#key countdown}
 				<p class="countdown-text">{countdown}</p>

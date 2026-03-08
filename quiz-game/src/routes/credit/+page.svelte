@@ -5,8 +5,8 @@
 	import { onMount, onDestroy } from 'svelte'
 	import { audioManager } from '$lib/audioManager.svelte'
 
-	let creditCard = $state<HTMLElement | null>(null)
-	let timer: ReturnType<typeof setInterval> | null = null
+	let creditCard = $state<HTMLElement | undefined>(undefined)
+	let timer: ReturnType<typeof setInterval> | undefined = undefined
 	let isPaused = false
 
 	onMount(() => {

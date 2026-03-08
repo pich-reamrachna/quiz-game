@@ -33,10 +33,13 @@ function buildChoiceOrderMap(): ChoiceOrderMap {
 	return map
 }
 
-function publicQuestionFromState(questionId: string, map: ChoiceOrderMap): PublicQuestion | null {
+function publicQuestionFromState(
+	questionId: string,
+	map: ChoiceOrderMap,
+): PublicQuestion | undefined {
 	const base = QUESTIONS.find((q) => q.id === questionId)
 	const choices = map[questionId]
-	if (!base || !choices || choices.length !== 3) return null
+	if (!base || !choices || choices.length !== 3) return undefined
 	const reordered: Question = { ...base, choices }
 	return toPublicQuestion(reordered)
 }
@@ -49,14 +52,14 @@ function isExpired(expiresAtIso: string): boolean {
 	return getTimeLeftMs(expiresAtIso) <= 0
 }
 
-async function getSession(sessionId: string): Promise<GameSessionRow | null> {
+async function getSession(sessionId: string): Promise<GameSessionRow | undefined> {
 	const result = await db.execute({
 		sql: 'SELECT * FROM game_sessions WHERE id = ? LIMIT 1',
 		args: [sessionId],
 	})
 
 	const row = result.rows[0]
-	return row ? (row as unknown as GameSessionRow) : null
+	return row ? (row as unknown as GameSessionRow) : undefined
 }
 
 async function finalizeSession(sessionId: string, finalScore: number): Promise<void> {
@@ -99,7 +102,7 @@ export async function createGameSession(playerName: string): Promise<{
 	timeLeftMs: number
 	questionIndex: number
 	score: number
-	question: PublicQuestion | null
+	question: PublicQuestion | undefined
 }> {
 	const sessionId = crypto.randomUUID()
 	const questionOrder = shuffleArray(QUESTIONS.map((q) => q.id))

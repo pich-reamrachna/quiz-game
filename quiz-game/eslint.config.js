@@ -28,6 +28,13 @@ export default defineConfig(
 			// see: https://typescript-eslint.io/troubleshooting/faqs/eslint/#i-get-errors-from-the-no-undef-rule-about-global-variables-not-being-defined-even-though-there-are-no-typescript-errors
 			'no-undef': 'off',
 			'no-commented-code/no-commented-code': 'warn',
+			'no-restricted-syntax': [
+				'error',
+				{
+					selector: 'Literal[value=null]',
+					message: 'Use undefined instead of null.',
+				},
+			],
 		},
 	},
 	{

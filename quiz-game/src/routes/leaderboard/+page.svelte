@@ -23,11 +23,11 @@
 		sessionStorage.removeItem('played')
 
 		// Check if coming from play screen with a score in sessionStorage.
-		const storedScore = sessionStorage.getItem('lastScore')
+		const storedScore = sessionStorage.getItem('lastScore') ?? undefined
 		const storedName = sessionStorage.getItem('playerName')?.trim() ?? ''
 		resultName = storedName
 
-		if (storedScore !== null) {
+		if (storedScore !== undefined) {
 			const parsedScore = Number(storedScore)
 			if (Number.isFinite(parsedScore) && parsedScore >= 0) {
 				resultScore = parsedScore
