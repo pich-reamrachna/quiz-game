@@ -9,7 +9,7 @@ import type {
 	PublicQuestion,
 	Question,
 	SubmitAnswerResult,
-} from '$lib/types'
+} from '$lib/types/types'
 
 const GAME_DURATION_MS = 30_000
 const LABELS: ChoiceKey[] = ['A', 'B', 'C']

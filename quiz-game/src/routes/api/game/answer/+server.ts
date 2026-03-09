@@ -1,6 +1,6 @@
 import { json, type RequestHandler } from '@sveltejs/kit'
 import { submitGameAnswer } from '$lib/server/gameSession.server'
-import type { ChoiceKey } from '$lib/types'
+import type { ChoiceKey } from '$lib/types/types'
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
 	try {

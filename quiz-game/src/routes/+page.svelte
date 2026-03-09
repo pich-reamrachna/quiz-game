@@ -2,8 +2,8 @@
 	import { goto } from '$app/navigation'
 	import { resolve } from '$app/paths'
 	import { onMount } from 'svelte'
-	import { audioManager } from '$lib/audioManager.svelte'
-	import './startPage.css'
+	import { audioManager } from '$lib/services/audioManager.svelte'
+	import '$lib/styles/startPage.css'
 
 	let name = $state('')
 	let error = $state('')

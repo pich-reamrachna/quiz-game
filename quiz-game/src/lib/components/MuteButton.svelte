@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { audioManager } from '$lib/audioManager.svelte'
+	import { audioManager } from '$lib/services/audioManager.svelte'
 </script>
 
 <button

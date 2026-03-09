@@ -1,11 +1,11 @@
 <!-- Leaderboard screen -->
 <script lang="ts">
-	import './leaderboard.css'
+	import '$lib/styles/leaderboard.css'
 	import { goto } from '$app/navigation'
 	import { resolve } from '$app/paths'
 	import { onMount } from 'svelte'
-	import type { ScoreRow } from '$lib/types'
-	import { audioManager } from '$lib/audioManager.svelte'
+	import type { ScoreRow } from '$lib/types/types'
+	import { audioManager } from '$lib/services/audioManager.svelte'
 
 	let entries = $state<ScoreRow[]>([])
 	let status = $state<'loading' | 'error' | 'empty' | 'ok'>('loading')
