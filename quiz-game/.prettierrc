@@ -4,6 +4,7 @@
 	"singleQuote": true,
 	"trailingComma": "all",
 	"semi": false,
+	"bracketSpacing": true,
 	"printWidth": 100,
 	"plugins": ["prettier-plugin-svelte", "prettier-plugin-tailwindcss"],
 	"tailwindStylesheet": "./src/lib/styles/layout.css",
