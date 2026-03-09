@@ -1,5 +1,6 @@
 {
     "recommendations": [
+        "mhutchie.git-graph",
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode"
     ]
