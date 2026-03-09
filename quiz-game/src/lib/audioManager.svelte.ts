@@ -29,9 +29,9 @@ const CROSS_FADE_TIME = 3 // Seconds skip before end to start cross-fade
  * Manage all game audio: BGM playlists, SFX, and fade effects.
  */
 class AudioManager {
-	private bgm: HTMLAudioElement | null = null
-	private currentBgmPath: string | null = null
-	private playlistIndex: number | null = null
+	private bgm: HTMLAudioElement | undefined = undefined
+	private currentBgmPath: string | undefined = undefined
+	private playlistIndex: number | undefined = undefined
 	private transitionToken = 0
 	private hasUnlocked = false
 	private crossFadeTriggered = false
@@ -65,7 +65,7 @@ class AudioManager {
 		)
 			return
 
-		if (this.playlistIndex === null) {
+		if (this.playlistIndex === undefined) {
 			this.playlistIndex = Math.floor(Math.random() * BGM_LIST.length)
 		}
 
@@ -174,8 +174,8 @@ class AudioManager {
 		}
 		audio.pause()
 		if (this.bgm === audio) {
-			this.bgm = null
-			this.currentBgmPath = null
+			this.bgm = undefined
+			this.currentBgmPath = undefined
 		}
 	}
 

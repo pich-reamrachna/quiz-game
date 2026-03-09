@@ -18,7 +18,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
 		const questionId =
 			typeof body === 'object' &&
-			body !== null &&
+			body &&
 			'questionId' in body &&
 			typeof (body as { questionId: unknown }).questionId === 'string'
 				? (body as { questionId: string }).questionId
@@ -26,7 +26,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
 		const choiceKey =
 			typeof body === 'object' &&
-			body !== null &&
+			body &&
 			'choiceKey' in body &&
 			typeof (body as { choiceKey: unknown }).choiceKey === 'string'
 				? (body as { choiceKey: string }).choiceKey

@@ -12,7 +12,7 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 	// Validates name
 	const playerName =
 		typeof body === 'object' &&
-		body !== null &&
+		body &&
 		'playerName' in body &&
 		typeof (body as { playerName: unknown }).playerName === 'string'
 			? (body as { playerName: string }).playerName.trim()

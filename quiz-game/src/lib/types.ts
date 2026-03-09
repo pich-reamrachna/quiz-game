@@ -35,7 +35,7 @@ export type GameState = {
 	playerName: string
 	score: number
 	questionCount: number
-	currentQuestion: Question | null
+	currentQuestion: Question | undefined
 	remainingMs: number
 }
 
