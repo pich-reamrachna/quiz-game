@@ -69,8 +69,6 @@
 	border: 1px solid rgba(180, 100, 255, 0.2);
 	border-radius: 28px;
 	padding: clamp(1rem, 2.5vw, 3rem) clamp(1rem, 4vw, 4rem); /* responsive padding */
-	min-height: clamp(320px, 70vh, 700px); /* responsive height */
-	max-height: clamp(320px, 75vh, 700px);
 	width: min(92%, 900px);
 	backdrop-filter: blur(24px);
 	box-shadow:
@@ -142,7 +140,6 @@
 	overflow-x: auto;
 	border-radius: 9px;
 	border: 1px solid rgba(180, 100, 255, 0.15);
-	margin-bottom: 1.5rem;
 	scrollbar-width: thin;
 	scrollbar-color: rgba(160, 96, 224, 0.4) transparent;
 }
@@ -283,6 +280,7 @@ tr:hover td {
 
 /* ── Play again button ──────────────── */
 .btn-play {
+	margin-top: 1.5rem;
 	width: 100%;
 	padding: clamp(0.7rem, 2vw, 0.95rem);
 	background: linear-gradient(135deg, #7b1fe8, #c97fff);
@@ -443,7 +441,7 @@ tr:hover td {
 		grid-column: 1;
 		width: auto;
 		padding: 0.5rem 1.5rem;
-		justify-self: center;
+		justify-self: start;
 	}
 
 	.leaderboard-title {
