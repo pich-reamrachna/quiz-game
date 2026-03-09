@@ -19,7 +19,7 @@
 		audioManager.playHomeBgm()
 	})
 
-	function handleStart() {
+	function handleStart(): void {
 		audioManager.playSfx('click')
 		if (!name.trim()) {
 			error = 'Please enter your name!'
@@ -32,17 +32,17 @@
 		goto(resolve('/play'))
 	}
 
-	function handleLeaderboard() {
+	function handleLeaderboard(): void {
 		audioManager.playSfx('click')
 		goto(resolve('/leaderboard'))
 	}
 
-	function handleCredit() {
+	function handleCredit(): void {
 		audioManager.playSfx('click')
 		goto(resolve('/credit'))
 	}
 
-	function handleKeydown(e: KeyboardEvent) {
+	function handleKeydown(e: KeyboardEvent): void {
 		if (e.key === 'Enter') handleStart()
 	}
 </script>

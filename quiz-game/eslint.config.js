@@ -27,7 +27,21 @@ export default defineConfig(
 			// typescript-eslint strongly recommend that you do not use the no-undef lint rule on TypeScript projects.
 			// see: https://typescript-eslint.io/troubleshooting/faqs/eslint/#i-get-errors-from-the-no-undef-rule-about-global-variables-not-being-defined-even-though-there-are-no-typescript-errors
 			'no-undef': 'off',
-			'no-commented-code/no-commented-code': 'warn', // or 'error'
+			'no-commented-code/no-commented-code': 'warn',
+		},
+	},
+	{
+		files: ['**/*.ts', '**/*.svelte', '**/*.svelte.ts'],
+		rules: {
+			'@typescript-eslint/explicit-function-return-type': [
+				'error',
+				{
+					allowExpressions: true,
+					allowTypedFunctionExpressions: true,
+					allowHigherOrderFunctions: true,
+					allowDirectConstAssertionInArrowFunctions: true,
+				},
+			],
 		},
 	},
 	{

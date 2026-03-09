@@ -40,7 +40,7 @@ class AudioManager {
 	private _isMuted = $state(browser ? localStorage.getItem('audio_muted') === 'true' : false)
 	private readonly volume = MASTER_VOLUME
 
-	get isMuted() {
+	get isMuted(): boolean {
 		return this._isMuted
 	}
 	set isMuted(v: boolean) {
@@ -53,7 +53,7 @@ class AudioManager {
 	 * Start/Resume the Home/Credit music.
 	 * Picks a random starting song once, then cycles sequentially (1->2->...->9->1)
 	 */
-	async playHomeBgm() {
+	async playHomeBgm(): Promise<void> {
 		if (!browser) return
 
 		// Don't restart if already playing a playlist track
@@ -75,14 +75,14 @@ class AudioManager {
 	/**
 	 * Transition to the Quiz gameplay countdown music.
 	 */
-	async playQuizBgm() {
+	async playQuizBgm(): Promise<void> {
 		await this.playTrack(SFX_MAP.countdown, false)
 	}
 
 	/**
 	 * Core playback engine. Handles fade transitions and playlist auto-advance.
 	 */
-	private async playTrack(path: string, isPlaylist: boolean) {
+	private async playTrack(path: string, isPlaylist: boolean): Promise<void> {
 		if (!browser) return
 		const token = ++this.transitionToken
 		const oldBgm = this.bgm
@@ -127,12 +127,12 @@ class AudioManager {
 		this.attemptPlay()
 	}
 
-	private advancePlaylist() {
+	private advancePlaylist(): void {
 		this.playlistIndex = (this.playlistIndex! + 1) % BGM_LIST.length
 		this.playTrack(BGM_LIST[this.playlistIndex], true)
 	}
 
-	private async attemptPlay() {
+	private async attemptPlay(): Promise<void> {
 		if (!this.bgm) return
 		try {
 			await this.bgm.play()
@@ -146,7 +146,7 @@ class AudioManager {
 		}
 	}
 
-	async fadeIn(duration: number) {
+	async fadeIn(duration: number): Promise<void> {
 		const audio = this.bgm
 		if (!audio) return
 		const steps = 30,
@@ -161,7 +161,7 @@ class AudioManager {
 	}
 
 	// New version that can target specific elements for cross-fading
-	async fadeOutElement(audio: HTMLAudioElement, duration: number, token?: number) {
+	async fadeOutElement(audio: HTMLAudioElement, duration: number, token?: number): Promise<void> {
 		if (!audio) return
 		const steps = 20,
 			interval = duration / steps,
@@ -180,11 +180,11 @@ class AudioManager {
 	}
 
 	// Kept for backward compatibility if needed elsewhere
-	async fadeOut(duration: number, token?: number) {
+	async fadeOut(duration: number, token?: number): Promise<void> {
 		if (this.bgm) await this.fadeOutElement(this.bgm, duration, token)
 	}
 
-	playSfx(type: keyof typeof SFX_MAP) {
+	playSfx(type: keyof typeof SFX_MAP): void {
 		if (!browser) return
 		const sfx = new Audio(SFX_MAP[type])
 		sfx.muted = this.isMuted
@@ -192,7 +192,7 @@ class AudioManager {
 		this.unlockAudio()
 	}
 
-	private unlockAudio() {
+	private unlockAudio(): void {
 		if (!this.bgm || this.hasUnlocked) return
 		if (!this.isMuted) this.bgm.muted = false
 		if (this.bgm.paused) {
@@ -205,9 +205,9 @@ class AudioManager {
 		}
 	}
 
-	init() {
+	init(): void {
 		if (!browser) return
-		const unlock = () => {
+		const unlock = (): void => {
 			this.unlockAudio()
 			if (this.hasUnlocked) {
 				;['click', 'keydown', 'touchstart'].forEach((e) => {
@@ -220,7 +220,7 @@ class AudioManager {
 		})
 	}
 
-	toggleMute() {
+	toggleMute(): void {
 		this.isMuted = !this.isMuted
 	}
 }
