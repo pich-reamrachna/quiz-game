@@ -2,17 +2,23 @@ pre-commit:
   parallel: true
   commands:
     format:
-      glob: "*.{js,ts,svelte,json,md,css,scss,yml,yaml,html}"
-      run: npx prettier --write {staged_files}
+      glob: "quiz-game/*.{js,ts,svelte,json,md,css,scss,yml,yaml,html}"
+      run: cd quiz-game && npx prettier --write {staged_files}
       stage_fixed: true
-    lint:
-      glob: "*.{js,ts,svelte}"
-      run: npx eslint --fix {staged_files}
+    lint_fix:
+      glob: "quiz-game/*.{js,ts,svelte}"
+      run: cd quiz-game && npx eslint --fix {staged_files}
       stage_fixed: true
 
 pre-push:
   commands:
     check:
-      run: npm run check
+      run: cd quiz-game && npm run check
+    spell:
+      run: cd quiz-game && npm run spell .
+    audit:
+      run: cd quiz-game && npm audit --audit-level=moderate
+    lint:
+      run: cd quiz-game && npm run lint
     test:
-      run: npm run test
+      run: cd quiz-game && npm run test
