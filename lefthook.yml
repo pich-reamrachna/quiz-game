@@ -2,31 +2,25 @@ pre-commit:
   parallel: true
   commands:
     prettier:
-      root: "quiz-game/"
-      glob: "**/*.{js,ts,svelte,json,md,css,scss,yml,yaml,html}"
+      glob: '**/*.{js,ts,svelte,json,md,css,scss,yml,yaml,html}'
       run: pnpm exec prettier --check --ignore-unknown {staged_files}
 
     eslint_check:
-      root: "quiz-game/"
-      glob: "**/*.{js,ts,svelte}"
+      glob: '**/*.{js,ts,svelte}'
       run: pnpm exec eslint --quiet --cache --cache-strategy content {staged_files}
 
     audit:
-      root: "quiz-game/"
       run: pnpm audit --audit-level moderate
 
     spell:
-      root: "quiz-game/"
-      glob: "**/*.{js,ts,svelte,md,json}"
+      glob: '**/*.{js,ts,svelte,md,json}'
       run: pnpm exec cspell --no-progress {staged_files}
 
 pre-push:
   parallel: true
   commands:
     check:
-      root: "quiz-game/"
       run: pnpm run check
 
     test:
-      root: "quiz-game/"
       run: pnpm run test

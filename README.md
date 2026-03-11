@@ -164,15 +164,13 @@ Same URL and Token used in the previous project
 
 ## SQL Commands used:
 
-`` CREATE TABLE scores (
+`CREATE TABLE scores (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     score INTEGER NOT NULL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
-);
-``
+);`
 
-`` CREATE INDEX leaderboard ON scores (score DESC, created_at ASC); ``
+`CREATE INDEX leaderboard ON scores (score DESC, created_at ASC);`
 
-To use index:  `` SELECT * FROM scores ORDER BY score DESC, created_at ASC LIMIT 10; ``
-
+To use index: `SELECT * FROM scores ORDER BY score DESC, created_at ASC LIMIT 10;`

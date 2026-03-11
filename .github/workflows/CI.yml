@@ -8,9 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: quiz-game
     steps:
       - uses: actions/checkout@v4
 
@@ -18,7 +15,7 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-          cache-dependency-path: quiz-game/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - uses: pnpm/action-setup@v4
         with:
