@@ -11,12 +11,12 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test:unit": "vitest",
-		"test": "npm run test:unit -- --run",
+		"test": "pnpm run test:unit -- --run",
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"migrate": "node --env-file=.env scripts/migrate.mjs",
-		"spell": "cspell \"/*.{js,ts,svelte,md,json}\" --no-progress",
-		"spell:fix": "cspell \"/*.{js,ts,svelte,md,json}\" --no-progress --words-only"
+		"spell": "cspell \"**/*.{js,ts,svelte,md,json}\" --no-progress",
+		"spell:fix": "cspell \"**/*.{js,ts,svelte,md,json}\" --no-progress --words-only"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.2",
@@ -52,7 +52,9 @@
 	"dependencies": {
 		"@libsql/client": "^0.17.0"
 	},
-	"overrides": {
-		"cookie": "^0.7.0"
+	"pnpm": {
+		"overrides": {
+			"cookie": "^0.7.0"
+		}
 	}
 }

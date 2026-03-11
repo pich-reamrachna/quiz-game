@@ -14,6 +14,7 @@
 	const TOTAL_TIME = 30
 
 	let name = $state('')
+
 	let currentQuestion = $state<PublicQuestion | undefined>(undefined)
 	let questionIndex = $state(0)
 	let score = $state(0)
