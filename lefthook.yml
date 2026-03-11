@@ -3,23 +3,24 @@ pre-commit:
   commands:
     prettier:
       glob: "quiz-game/*.{js,ts,svelte,json,md,css,scss,yml,yaml,html}"
-      run: npx --prefix quiz-game prettier --check --ignore-unknown {staged_files}
+      run: pnpm --dir quiz-game exec prettier --check --ignore-unknown {staged_files}
     
     eslint_check:
       glob: "quiz-game/*.{js,ts,svelte}"
-      run: npx --prefix quiz-game eslint --quiet --cache --cache-strategy content {staged_files}
+      run: pnpm --dir quiz-game exec eslint --quiet --cache --cache-strategy content {staged_files}
     
     audit:
-      run: npm --prefix quiz-game audit
+      run: pnpm --dir quiz-game audit
     
     spell:
-      run: npx --prefix quiz-game cspell --no-progress {staged_files}
+      run: pnpm --dir quiz-game exec cspell --no-progress {staged_files}
 
 pre-push:
   parallel: true
   commands:
     check:
-      run: npm --prefix quiz-game run check
+      run: pnpm --dir quiz-game run check
     
     test:
-      run: npm --prefix quiz-game run test
+      run: pnpm --dir quiz-game run test
+
