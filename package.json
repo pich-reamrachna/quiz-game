@@ -16,7 +16,8 @@
 		"format": "prettier --write .",
 		"migrate": "node --env-file=.env scripts/migrate.mjs",
 		"spell": "cspell \"**/*.{js,ts,svelte,md,json}\" --no-progress",
-		"spell:fix": "cspell \"**/*.{js,ts,svelte,md,json}\" --no-progress --words-only"
+		"spell:fix": "cspell \"**/*.{js,ts,svelte,md,json}\" --no-progress --words-only",
+		"update-latest": "pnpm update --latest"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.2",
