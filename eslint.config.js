@@ -8,6 +8,7 @@ import globals from 'globals'
 import ts from 'typescript-eslint'
 import svelteConfig from './svelte.config.js'
 import noCommentedCode from 'eslint-plugin-no-commented-code'
+import { fixupPluginRules } from '@eslint/compat'
 
 const gitignorePath = path.resolve(import.meta.dirname, '.gitignore')
 
@@ -21,7 +22,7 @@ export default defineConfig(
 	{
 		languageOptions: { globals: { ...globals.browser, ...globals.node } },
 		plugins: {
-			'no-commented-code': noCommentedCode,
+			'no-commented-code': fixupPluginRules(noCommentedCode),
 		},
 		rules: {
 			// typescript-eslint strongly recommend that you do not use the no-undef lint rule on TypeScript projects.
