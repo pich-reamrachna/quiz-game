@@ -20,7 +20,9 @@ function shuffleArray<T>(arr: T[]): T[] {
 	const copy = [...arr]
 	for (let i = copy.length - 1; i > 0; i--) {
 		const j = Math.floor(Math.random() * (i + 1))
-		;[copy[i], copy[j]] = [copy[j], copy[i]]
+		const tmp = copy[i] as T
+		copy[i] = copy[j] as T
+		copy[j] = tmp
 	}
 	return copy
 }
@@ -28,7 +30,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 function buildChoiceOrderMap(): ChoiceOrderMap {
 	const map: ChoiceOrderMap = {}
 	for (const q of QUESTIONS) {
-		map[q.id] = shuffleArray(q.choices).map((c, i) => ({ ...c, key: LABELS[i] }))
+		map[q.id] = shuffleArray(q.choices).map((c, i) => ({ ...c, key: LABELS[i]! }))
 	}
 	return map
 }
@@ -132,7 +134,7 @@ export async function createGameSession(playerName: string): Promise<{
 		timeLeftMs: getTimeLeftMs(expiresAt),
 		questionIndex: 0,
 		score: 0,
-		question: publicQuestionFromState(questionOrder[0], choiceOrderMap),
+		question: publicQuestionFromState(questionOrder[0]!, choiceOrderMap),
 	}
 }
 

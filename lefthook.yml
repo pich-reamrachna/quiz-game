@@ -1,5 +1,4 @@
 pre-commit:
-  parallel: true
   commands:
     prettier:
       glob: '**/*.{js,ts,svelte,json,md,css,scss,yml,yaml,html}'
@@ -8,9 +7,6 @@ pre-commit:
     eslint_check:
       glob: '**/*.{js,ts,svelte}'
       run: pnpm exec eslint --quiet --cache --cache-strategy content {staged_files}
-
-    audit:
-      run: pnpm audit --audit-level moderate
 
     spell:
       glob: '**/*.{js,ts,svelte,md,json}'
@@ -24,3 +20,6 @@ pre-push:
 
     test:
       run: pnpm run test
+
+    audit:
+      run: pnpm audit --audit-level moderate
