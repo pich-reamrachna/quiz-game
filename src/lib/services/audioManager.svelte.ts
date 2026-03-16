@@ -69,7 +69,7 @@ class AudioManager {
 			this.playlistIndex = Math.floor(Math.random() * BGM_LIST.length)
 		}
 
-		await this.playTrack(BGM_LIST[this.playlistIndex], true)
+		await this.playTrack(BGM_LIST[this.playlistIndex]!, true)
 	}
 
 	/**
@@ -129,7 +129,7 @@ class AudioManager {
 
 	private advancePlaylist(): void {
 		this.playlistIndex = (this.playlistIndex! + 1) % BGM_LIST.length
-		this.playTrack(BGM_LIST[this.playlistIndex], true)
+		this.playTrack(BGM_LIST[this.playlistIndex]!, true)
 	}
 
 	private async attemptPlay(): Promise<void> {

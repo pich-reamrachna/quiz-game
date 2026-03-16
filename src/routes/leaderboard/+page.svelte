@@ -87,7 +87,7 @@
 					vx: Math.cos(angle) * speed + (Math.random() - 0.5) * 2,
 					vy: Math.sin(angle) * speed - Math.random() * 3,
 					alpha: 1,
-					color: colors[Math.floor(Math.random() * colors.length)],
+					color: colors[Math.floor(Math.random() * colors.length)]!,
 					isConfetti: i % 3 === 0,
 					rotation: Math.random() * Math.PI * 2,
 				})
@@ -102,6 +102,7 @@
 
 			for (let i = dots.length - 1; i >= 0; i--) {
 				const d = dots[i]
+				if (!d) continue
 				d.x += d.vx
 				d.y += d.vy
 				d.vy += 0.06
