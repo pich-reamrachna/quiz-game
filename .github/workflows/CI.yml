@@ -39,6 +39,11 @@ jobs:
       - run: pnpm run lint
       - run: pnpm run build
       - run: pnpm exec vitest run --coverage
+      - name: Verify coverage report
+        run: |
+          test -f coverage/lcov.info
+          wc -l coverage/lcov.info
+          head -n 20 coverage/lcov.info
 
       # SonarQube
       - name: Analyze with SonarQube
@@ -52,3 +57,4 @@ jobs:
             -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || secrets.SONAR_PROJECT_KEY || github.event.repository.name }}
             -Dsonar.organization=${{ vars.SONAR_ORGANIZATION || secrets.SONAR_ORGANIZATION }}
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.verbose=true
