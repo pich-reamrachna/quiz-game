@@ -34,13 +34,11 @@ for (const file of files) {
 	const raw = await readFile(file, 'utf8')
 	const statements = toStatements(raw)
 
-	console.log(`\nApplying ${file} (${statements.length} statements)`)
 	await db.execute('BEGIN')
 	try {
 		for (let i = 0; i < statements.length; i++) {
 			const sql = statements[i]
 			await db.execute(sql)
-			console.log(`  OK ${i + 1}/${statements.length}`)
 		}
 		await db.execute('COMMIT')
 	} catch (err) {
@@ -48,5 +46,3 @@ for (const file of files) {
 		throw err
 	}
 }
-
-console.log('\nMigrations done.')
