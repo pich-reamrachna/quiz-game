@@ -40,6 +40,7 @@ jobs:
       - run: pnpm run build
       - run: pnpm run test
 
+      # SonarQube
       - name: Analyze with SonarQube
         uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
         env:
