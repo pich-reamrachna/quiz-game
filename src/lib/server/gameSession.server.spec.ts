@@ -243,4 +243,32 @@ describe('gameSession.server', () => {
 		expect(result).toEqual({ status: 'finished', score: 2, timeLeftMs: 0 })
 		expect(tx.commit).toHaveBeenCalledTimes(1)
 	})
+
+	it('rolls back when finalize update does not affect a row', async () => {
+		const tx = { execute: vi.fn(), commit: vi.fn(), rollback: vi.fn() }
+		dbMock.transaction.mockResolvedValueOnce(tx)
+		dbMock.execute.mockResolvedValueOnce({
+			rows: [makeSession({ expires_at: new Date(Date.now() - 1_000).toISOString(), score: 9 })],
+			rowsAffected: 0,
+		})
+		tx.execute.mockResolvedValueOnce({ rowsAffected: 0 })
+
+		const result = await submitGameAnswer('session-1', 'q1', 'A')
+		expect(result).toEqual({ status: 'finished', correct: false, score: 9, timeLeftMs: 0 })
+		expect(tx.rollback).toHaveBeenCalledTimes(1)
+		expect(tx.commit).not.toHaveBeenCalled()
+	})
+
+	it('rethrows when finalize transaction execute throws', async () => {
+		const tx = { execute: vi.fn(), commit: vi.fn(), rollback: vi.fn() }
+		dbMock.transaction.mockResolvedValueOnce(tx)
+		dbMock.execute.mockResolvedValueOnce({
+			rows: [makeSession({ expires_at: new Date(Date.now() - 1_000).toISOString() })],
+			rowsAffected: 0,
+		})
+		tx.execute.mockRejectedValueOnce(new Error('tx fail'))
+
+		await expect(submitGameAnswer('session-1', 'q1', 'A')).rejects.toThrow('tx fail')
+		expect(tx.rollback).toHaveBeenCalledTimes(1)
+	})
 })

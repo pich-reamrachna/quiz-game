@@ -6,6 +6,7 @@ ignorePaths:
   - .git/**
   - .gitignore
   - migrations/**
+  - coverage/**
 words:
   - AUTOINCREMENT
   - chanthariroza
@@ -22,3 +23,4 @@ words:
   - Stylesheet
   - Tepbrathna
   - TURSO
+  - unstub

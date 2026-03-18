@@ -53,4 +53,39 @@ describe('POST /api/game/start', () => {
 		expect(body.sessionStarted).toBe(true)
 		expect(body.sessionId).toBe('session-abc')
 	})
+
+	it('returns 400 when player name is invalid', async () => {
+		const request = new Request('http://localhost/api/game/start', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ playerName: '   ' }),
+		})
+
+		const response = await POST({
+			request,
+			cookies: { set: vi.fn() },
+			url: new URL('http://localhost/api/game/start'),
+		} as never)
+
+		expect(response.status).toBe(400)
+		expect(await response.json()).toEqual({ error: 'Name must be between 1 and 20 characters.' })
+	})
+
+	it('returns 500 when service throws while creating session', async () => {
+		createGameSessionMock.mockRejectedValueOnce(new Error('db error'))
+		const request = new Request('http://localhost/api/game/start', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ playerName: 'Alice' }),
+		})
+
+		const response = await POST({
+			request,
+			cookies: { set: vi.fn() },
+			url: new URL('http://localhost/api/game/start'),
+		} as never)
+
+		expect(response.status).toBe(500)
+		expect(await response.json()).toEqual({ error: 'Failed to start game' })
+	})
 })
