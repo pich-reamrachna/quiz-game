@@ -32,7 +32,7 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 			sameSite: 'lax',
 			secure: url.protocol === 'https:',
 			path: '/',
-			maxAge: 30,
+			maxAge: 60,
 		})
 
 		// return first public question
