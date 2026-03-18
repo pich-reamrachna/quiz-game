@@ -28,6 +28,8 @@ export default defineConfig(
 			// typescript-eslint strongly recommend that you do not use the no-undef lint rule on TypeScript projects.
 			// see: https://typescript-eslint.io/troubleshooting/faqs/eslint/#i-get-errors-from-the-no-undef-rule-about-global-variables-not-being-defined-even-though-there-are-no-typescript-errors
 			'no-undef': 'off',
+			'no-var': 'error',
+			'prefer-const': 'error',
 			'no-console': ['error', { allow: ['warn', 'error', 'info'] }],
 			'no-debugger': 'error',
 			'no-commented-code/no-commented-code': 'warn',

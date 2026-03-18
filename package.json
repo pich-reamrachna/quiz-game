@@ -14,6 +14,8 @@
 		"test:unit": "vitest",
 		"test": "pnpm run test:unit -- --run",
 		"lint": "prettier --check . && eslint .",
+		"lint:eslint": "eslint . --cache --cache-strategy content",
+		"lint:prettier": "prettier --check .",
 		"format": "prettier --write .",
 		"migrate": "node --env-file=.env scripts/migrate.mjs",
 		"spell": "cspell \"**/*.{js,ts,svelte,md,json}\" --no-progress",
