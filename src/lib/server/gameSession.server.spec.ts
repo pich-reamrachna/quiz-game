@@ -162,6 +162,60 @@ describe('gameSession.server', () => {
 		expect(tx.commit).toHaveBeenCalledTimes(1)
 	})
 
+	it('returns finished when session is expired before answer processing', async () => {
+		const tx = { execute: vi.fn(), commit: vi.fn(), rollback: vi.fn() }
+		dbMock.transaction.mockResolvedValueOnce(tx)
+		dbMock.execute.mockResolvedValueOnce({
+			rows: [makeSession({ expires_at: new Date(Date.now() - 1_000).toISOString(), score: 4 })],
+			rowsAffected: 0,
+		})
+		tx.execute.mockResolvedValueOnce({ rowsAffected: 1 }).mockResolvedValueOnce({ rowsAffected: 1 })
+
+		const result = await submitGameAnswer('session-1', 'q1', 'A')
+		expect(result).toEqual({ status: 'finished', correct: false, score: 4, timeLeftMs: 0 })
+		expect(tx.commit).toHaveBeenCalledTimes(1)
+	})
+
+	it('returns invalid_session_data when expected question choices are malformed', async () => {
+		dbMock.execute.mockResolvedValueOnce({
+			rows: [
+				makeSession({
+					choice_order_json: JSON.stringify({
+						q1: [
+							{ key: 'A', text: 'a1', isCorrect: true },
+							{ key: 'B', text: 'b1', isCorrect: false },
+						],
+					}),
+				}),
+			],
+			rowsAffected: 0,
+		})
+
+		const result = await submitGameAnswer('session-1', 'q1', 'A')
+		expect(result).toEqual({ status: 'invalid_session_data' })
+	})
+
+	it('returns invalid_sequence when final-step update races and affects zero rows', async () => {
+		dbMock.execute
+			.mockResolvedValueOnce({
+				rows: [makeSession({ question_order_json: JSON.stringify(['q1']) })],
+				rowsAffected: 0,
+			})
+			.mockResolvedValueOnce({ rows: [], rowsAffected: 0 })
+
+		const result = await submitGameAnswer('session-1', 'q1', 'A')
+		expect(result).toEqual({ status: 'invalid_sequence' })
+	})
+
+	it('returns invalid_sequence when continue-step update affects zero rows', async () => {
+		dbMock.execute
+			.mockResolvedValueOnce({ rows: [makeSession()], rowsAffected: 0 })
+			.mockResolvedValueOnce({ rows: [], rowsAffected: 0 })
+
+		const result = await submitGameAnswer('session-1', 'q1', 'A')
+		expect(result).toEqual({ status: 'invalid_sequence' })
+	})
+
 	it('finishGameSession returns already_finished for non-playing session', async () => {
 		dbMock.execute.mockResolvedValueOnce({
 			rows: [makeSession({ status: 'finished', score: 3 })],
