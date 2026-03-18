@@ -38,7 +38,7 @@ jobs:
       - run: pnpm audit --audit-level moderate
       - run: pnpm run lint
       - run: pnpm run build
-      - run: pnpm run test
+      - run: pnpm exec vitest run --coverage
 
       # SonarQube
       - name: Analyze with SonarQube
@@ -51,3 +51,4 @@ jobs:
           args: >
             -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || secrets.SONAR_PROJECT_KEY || github.event.repository.name }}
             -Dsonar.organization=${{ vars.SONAR_ORGANIZATION || secrets.SONAR_ORGANIZATION }}
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
