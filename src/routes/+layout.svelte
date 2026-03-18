@@ -2,7 +2,7 @@
 	import '$lib/styles/layout.css'
 	import MuteButton from '$lib/components/MuteButton.svelte'
 
-	let { children } = $props()
+	const { children } = $props()
 </script>
 
 <svelte:head><link rel="icon" href="/favicon.png" /></svelte:head>
