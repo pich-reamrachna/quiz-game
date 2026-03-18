@@ -5,6 +5,10 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -28,4 +32,5 @@ jobs:
       - run: pnpm run spell
       - run: pnpm audit --audit-level moderate
       - run: pnpm run lint
+      - run: pnpm run build
       - run: pnpm run test
