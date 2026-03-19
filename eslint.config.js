@@ -32,6 +32,8 @@ export default defineConfig(
 			'prefer-const': 'error',
 			'no-console': ['error', { allow: ['warn', 'error', 'info'] }],
 			'no-debugger': 'error',
+			complexity: ['error', 15],
+			'max-depth': ['error', 3],
 			'no-commented-code/no-commented-code': 'warn',
 			'no-restricted-syntax': [
 				'error',
