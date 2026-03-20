@@ -5,13 +5,22 @@ on:
   push:
     branches: [main]
 
+permissions:
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
         with:
           version: 10
 
@@ -21,11 +30,29 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: cp .env.example .env
-      - run: pnpm exec playwright install --with-deps
+      - run: pnpm exec playwright install
       - run: pnpm run check
       - run: pnpm run spell
       - run: pnpm audit --audit-level moderate
       - run: pnpm run lint
-      - run: pnpm run test
+      - run: pnpm run build
+      - run: pnpm run test:coverage
+      - name: Verify coverage report
+        run: |
+          test -f coverage/lcov.info
+          wc -l coverage/lcov.info
+          head -n 20 coverage/lcov.info
+
+      # SonarQube
+      - name: Analyze with SonarQube
+        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || secrets.SONAR_PROJECT_KEY || github.event.repository.name }}
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION || secrets.SONAR_ORGANIZATION }}

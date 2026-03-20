@@ -1,4 +1,4 @@
-import { db } from '$lib/server/db'
+import { createDb } from '$lib/server/db'
 import { QUESTIONS } from '$lib/server/questions.server'
 import { toPublicQuestion } from '$lib/server/questionMapper.server'
 import type {
@@ -55,6 +55,7 @@ function isExpired(expiresAtIso: string): boolean {
 }
 
 async function getSession(sessionId: string): Promise<GameSessionRow | undefined> {
+	const db = createDb()
 	const result = await db.execute({
 		sql: 'SELECT * FROM game_sessions WHERE id = ? LIMIT 1',
 		args: [sessionId],
@@ -65,6 +66,7 @@ async function getSession(sessionId: string): Promise<GameSessionRow | undefined
 }
 
 async function finalizeSession(sessionId: string, finalScore: number): Promise<void> {
+	const db = createDb()
 	const tx = await db.transaction()
 	try {
 		const updateResult = await tx.execute({
@@ -106,6 +108,7 @@ export async function createGameSession(playerName: string): Promise<{
 	score: number
 	question: PublicQuestion | undefined
 }> {
+	const db = createDb()
 	const sessionId = crypto.randomUUID()
 	const questionOrder = shuffleArray(QUESTIONS.map((q) => q.id))
 	const choiceOrderMap = buildChoiceOrderMap()
@@ -143,6 +146,7 @@ export async function submitGameAnswer(
 	questionId: string,
 	choiceKey: ChoiceKey,
 ): Promise<SubmitAnswerResult> {
+	const db = createDb()
 	const session = await getSession(sessionId)
 	if (!session) return { status: 'not_found' }
 	if (session.status !== 'playing') return { status: 'already_finished' }

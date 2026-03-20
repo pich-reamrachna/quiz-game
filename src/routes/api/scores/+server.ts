@@ -1,8 +1,10 @@
-import { db } from '$lib/server/db'
+import { createDb } from '$lib/server/db'
 import { json } from '@sveltejs/kit'
 
 export async function GET({ url }: { url: URL }): Promise<Response> {
 	try {
+		const db = createDb()
+
 		// example: /api/scores?limit=10
 		const limitParam = url.searchParams.get('limit')
 
